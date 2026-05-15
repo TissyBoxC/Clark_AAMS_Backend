@@ -82,7 +82,7 @@ java -jar build/libs/Clark_AAMS_Backend-0.0.1-SNAPSHOT.jar
 
 后台页面和后台管理接口需要登录。
 
-账号密码通过环境变量配置：
+账号密码可以通过环境变量配置：
 
 ```text
 账号：<your-admin-username>
@@ -97,6 +97,8 @@ Set credentials with environment variables before starting:
 CLARK_AAMS_ADMIN_USERNAME=<your-admin-username>
 CLARK_AAMS_ADMIN_PASSWORD=<your-admin-password>
 ```
+
+如果未配置环境变量且本地不存在 `admin-config.json`，首次访问 `/admin` 会自动进入 `/admin/register.html` 创建管理员账号。
 
 ```text
 /admin
@@ -143,15 +145,25 @@ clark-aams.client-version.config-path=/path/to/client-version.json
 | `POST` | `/api/v1/imports/{schoolId}/courses` | 导入课表 |
 | `GET` | `/api/v1/app/version` | Query 参数形式版本检查 |
 | `POST` | `/api/v1/app/version/check` | JSON 请求体形式版本检查 |
+| `POST` | `/api/v1/courses/recognize` | 上传一张或多张课表图片，返回课程 JSON 数组 |
+| `POST` | `/api/v1/course-pickups` | 上传一张或多张课表图片，返回取件码和课程 JSON |
+| `GET` | `/api/v1/course-pickups/{code}` | 按 8 位取件码返回课程 JSON |
 
 ### 后台接口
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | `POST` | `/api/v1/admin/auth/login` | 后台登录 |
+| `POST` | `/api/v1/admin/auth/register` | 首次初始化管理员账号 |
+| `GET` | `/api/v1/admin/auth/setup` | 读取后台初始化状态 |
 | `POST` | `/api/v1/admin/auth/logout` | 后台退出 |
 | `GET` | `/api/v1/admin/app-version/config` | 读取版本配置 |
 | `PUT` | `/api/v1/admin/app-version/config` | 更新版本配置 |
+| `GET` | `/api/v1/admin/ai/config` | 读取 AI 识别配置 |
+| `PUT` | `/api/v1/admin/ai/config` | 更新 AI Base URL、API Key 和模型 |
+| `GET` | `/api/v1/admin/course-pickups` | 读取取件码记录 |
+| `PUT` | `/api/v1/admin/course-pickups/{code}` | 更新取件码对应 JSON |
+| `DELETE` | `/api/v1/admin/course-pickups/{code}` | 删除取件码记录和图片 |
 | `POST` | `/api/v1/admin/school-scaffold` | 生成学校适配脚手架 |
 
 完整接口说明见：
@@ -212,7 +224,7 @@ src/main/resources/static/docs/school-importer-development.md
 
 ## 部署注意事项
 
-- 生产部署时，请通过环境变量配置并保护好后台登录账号密码，不要将真实凭据提交到仓库。
-- `client-version.json` 应与 jar 放在同一目录，便于升级 jar 时保留配置。
+- 生产部署时，请通过环境变量或首次注册配置并保护好后台登录账号密码，不要将真实凭据提交到仓库。
+- `admin-config.json`、`client-version.json`、`ai-config.json` 和 `course-pickups/` 应与 jar 放在同一目录，便于升级 jar 时保留运行时配置。
 - 如果后台管理页和后端分开部署，需要额外处理 CORS、Cookie 和 Session。
 - 运行时生成文件、构建目录和 IDE 目录已通过 `.gitignore` 忽略。

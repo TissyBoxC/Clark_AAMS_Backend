@@ -8,7 +8,8 @@ public enum ErrorCode {
     IMPORTER_NOT_FOUND(40402, "当前学校暂未配置教务系统导入"),
     ACADEMIC_REQUEST_FAILED(50001, "教务系统请求失败"),
     COURSE_PARSE_FAILED(50002, "课表解析失败"),
-    INTERNAL_ERROR(50003, "后端内部错误");
+    INTERNAL_ERROR(50003, "后端内部错误"),
+    AI_REQUEST_FAILED(50004, "AI 请求失败");
 
     private final int code;
     private final String defaultMessage;

@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 识别配置</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --line: #d7deea;
+      --text: #1f2530;
+      --muted: #5f6b7a;
+      --primary: #155eef;
+      --primary-hover: #0f4dd0;
+      --danger: #b42318;
+      --ok: #12754a;
+      --soft: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .bar {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 16px; }
+    nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+      gap: 18px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .panel-title {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-body {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+    form { display: grid; gap: 14px; }
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    textarea {
+      min-height: 420px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+    }
+    button, a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border-radius: 6px;
+      border: 1px solid var(--primary);
+      padding: 0 12px;
+      background: var(--primary);
+      color: #fff;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button:hover, a.button:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    button.secondary, a.button.secondary {
+      background: var(--surface);
+      color: var(--primary);
+    }
+    button.secondary:hover, a.button.secondary:hover {
+      background: #eef4ff;
+      color: var(--primary-hover);
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .status.ok { color: var(--ok); }
+    .status.error { color: var(--danger); }
+    .check {
+      display: flex;
+      grid-template-columns: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .check input { width: auto; }
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+    }
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: var(--soft);
+      color: var(--text);
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      .bar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div>
+      <h1>AI 识别配置</h1>
+      <p class="status">配置 OpenAI-compatible 视觉模型，用于课表图片转 JSON。</p>
+    </div>
+    <nav>
+      <a class="button secondary" href="/admin/index.html">管理台</a>
+      <a class="button secondary" href="/admin/versions.html">版本管理</a>
+      <a class="button secondary" href="/admin/schools.html">学校管理</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-title">
+      <h2>模型配置</h2>
+      <span class="status" id="saveStatus">未加载</span>
+    </div>
+    <div class="panel-body">
+      <form id="configForm">
+        <label>Base URL
+          <input name="baseUrl" placeholder="https://api.openai.com/v1" required>
+          <span class="hint">如果填写到 <code>/v1</code>，后端会自动拼接 <code>/chat/completions</code>。</span>
+        </label>
+        <label>模型
+          <input name="model" placeholder="gpt-4o-mini" required>
+        </label>
+        <label>API Key
+          <input name="apiKey" type="password" autocomplete="new-password" placeholder="留空则保留原 key">
+          <span class="hint" id="keyState">未读取</span>
+        </label>
+        <label class="check">
+          <input name="clearApiKey" type="checkbox">
+          清空已保存的 API Key
+        </label>
+        <div class="actions">
+          <button type="submit">保存配置</button>
+          <button class="secondary" type="button" id="reloadButton">重新加载</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">
+      <h2>识别测试</h2>
+      <span class="status" id="recognizeStatus">待上传</span>
+    </div>
+    <div class="panel-body">
+      <form id="recognizeForm">
+        <label>课表图片
+          <input name="images" type="file" accept="image/*" multiple required>
+          <span class="hint">接口字段名为 <code>images</code>，可一次上传多张。</span>
+        </label>
+        <div class="actions">
+          <button type="submit">上传识别</button>
+        </div>
+      </form>
+      <label>纯 JSON 返回
+        <textarea id="resultText" spellcheck="false" placeholder="识别结果会显示在这里"></textarea>
+      </label>
+    </div>
+  </section>
+</main>
+
+<script>
+  const configForm = document.querySelector('#configForm');
+  const recognizeForm = document.querySelector('#recognizeForm');
+  const saveStatus = document.querySelector('#saveStatus');
+  const recognizeStatus = document.querySelector('#recognizeStatus');
+  const keyState = document.querySelector('#keyState');
+  const resultText = document.querySelector('#resultText');
+  const reloadButton = document.querySelector('#reloadButton');
+
+  async function loadConfig() {
+    setStatus(saveStatus, '正在加载');
+    try {
+      const response = await fetch('/api/v1/admin/ai/config');
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      configForm.baseUrl.value = result.data.baseUrl || '';
+      configForm.model.value = result.data.model || '';
+      configForm.apiKey.value = '';
+      configForm.clearApiKey.checked = false;
+      keyState.textContent = result.data.apiKeyConfigured ? '已保存 API Key' : '尚未保存 API Key';
+      setStatus(saveStatus, '已加载', false, true);
+    } catch (error) {
+      setStatus(saveStatus, error.message, true);
+    }
+  }
+
+  async function saveConfig(event) {
+    event.preventDefault();
+    setStatus(saveStatus, '正在保存');
+    const payload = {
+      baseUrl: configForm.baseUrl.value,
+      model: configForm.model.value,
+      apiKey: configForm.apiKey.value,
+      clearApiKey: configForm.clearApiKey.checked
+    };
+    try {
+      const response = await fetch('/api/v1/admin/ai/config', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      configForm.baseUrl.value = result.data.baseUrl || '';
+      configForm.model.value = result.data.model || '';
+      configForm.apiKey.value = '';
+      configForm.clearApiKey.checked = false;
+      keyState.textContent = result.data.apiKeyConfigured ? '已保存 API Key' : '尚未保存 API Key';
+      setStatus(saveStatus, '已保存', false, true);
+    } catch (error) {
+      setStatus(saveStatus, error.message, true);
+    }
+  }
+
+  async function recognize(event) {
+    event.preventDefault();
+    setStatus(recognizeStatus, '正在识别');
+    resultText.value = '';
+    const formData = new FormData();
+    for (const file of recognizeForm.images.files) {
+      formData.append('images', file);
+    }
+    try {
+      const response = await fetch('/api/v1/courses/recognize', {
+        method: 'POST',
+        body: formData
+      });
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+      resultText.value = JSON.stringify(JSON.parse(text), null, 2);
+      setStatus(recognizeStatus, '识别完成', false, true);
+    } catch (error) {
+      resultText.value = error.message;
+      setStatus(recognizeStatus, '识别失败', true);
+    }
+  }
+
+  function setStatus(element, message, error = false, ok = false) {
+    element.textContent = message;
+    element.classList.toggle('error', error);
+    element.classList.toggle('ok', ok);
+  }
+
+  configForm.addEventListener('submit', saveConfig);
+  recognizeForm.addEventListener('submit', recognize);
+  reloadButton.addEventListener('click', loadConfig);
+  loadConfig();
+</script>
+</body>
+</html>

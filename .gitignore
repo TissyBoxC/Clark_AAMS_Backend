@@ -2,6 +2,9 @@ HELP.md
 .gradle
 build/
 client-version.json
+ai-config.json
+admin-config.json
+course-pickups/
 *.log
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

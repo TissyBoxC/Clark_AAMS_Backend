@@ -335,11 +335,315 @@ h3 {
 }
 
 .section,
+.tool-section,
 .split-section,
 .cta-section {
   width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
   padding: 88px 0;
+}
+
+.tool-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(360px, 1fr);
+  gap: 36px;
+  align-items: start;
+  padding-top: 56px;
+}
+
+.tool-copy p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.tool-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.tool-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.tool-tab {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tool-tab.active {
+  background: #fff;
+  color: var(--primary-dark);
+  box-shadow: 0 6px 18px rgba(38, 57, 92, 0.08);
+}
+
+.tool-form {
+  display: none;
+  gap: 12px;
+}
+
+.tool-form.active {
+  display: grid;
+}
+
+.tool-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tool-form input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.drop-zone {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 190px;
+  padding: 24px;
+  border: 1.5px dashed #b8c6dc;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.drop-zone:hover,
+.drop-zone.dragging {
+  border-color: var(--primary);
+  background: #eef4ff;
+  transform: translateY(-1px);
+}
+
+.drop-zone input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drop-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.drop-zone strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.drop-zone span {
+  max-width: 360px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 30px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.file-list span {
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  overflow-wrap: anywhere;
+}
+
+.pickup-result {
+  display: grid;
+  gap: 10px;
+}
+
+.pickup-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.pickup-head strong {
+  color: var(--primary-dark);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0;
+}
+
+.progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e6edf7;
+}
+
+.progress-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.24s ease;
+}
+
+.progress-track.active .progress-bar {
+  background-size: 160px 100%;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0.18) 75%, transparent 75%),
+    linear-gradient(90deg, var(--primary), var(--accent));
+  animation: progress-stripes 1s linear infinite;
+}
+
+.tool-hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pickup-result textarea {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  resize: vertical;
+  background: #0f172a;
+  color: #dbeafe;
+  font: 12px/1.55 "SFMono-Regular", Consolas, monospace;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(8px);
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-panel {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.modal-panel h2 {
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+.modal-panel p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-code {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid rgba(49, 109, 255, 0.24);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--primary-dark);
+  text-align: center;
+  font: 900 34px/1 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modal-actions .primary-action,
+.modal-actions .secondary-action {
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.copy-status {
+  min-height: 20px;
+  margin-top: 10px;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+@keyframes progress-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 160px 0; }
 }
 
 .section-heading {
@@ -536,6 +840,7 @@ h3 {
   }
 
   .feature-grid,
+  .tool-section,
   .split-section {
     grid-template-columns: 1fr;
   }
@@ -563,6 +868,7 @@ h3 {
 
   .hero,
   .section,
+  .tool-section,
   .split-section,
   .cta-section {
     width: min(100% - 24px, 1160px);

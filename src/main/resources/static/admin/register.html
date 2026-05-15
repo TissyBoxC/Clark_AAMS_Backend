@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clark AAMS 后台登录</title>
+  <title>Clark AAMS 初始注册</title>
   <style>
     :root {
       color-scheme: light;
@@ -32,8 +32,8 @@
       font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
     }
 
-    .login-panel {
-      width: min(100%, 420px);
+    .register-panel {
+      width: min(100%, 440px);
       padding: 28px;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -97,37 +97,39 @@
   </style>
 </head>
 <body>
-  <main class="login-panel">
-    <h1>后台管理登录</h1>
-    <p>请输入管理员账号后继续访问 Clark AAMS 管理页面。</p>
+  <main class="register-panel">
+    <h1>初始化管理员账号</h1>
+    <p>首次使用后台前，请先创建管理员账号。注册完成后会进入管理台。</p>
 
-    <form id="loginForm">
+    <form id="registerForm">
       <label>
-        账号
+        管理员账号
         <input name="username" autocomplete="username" required autofocus>
       </label>
       <label>
         密码
-        <input name="password" type="password" autocomplete="current-password" required>
+        <input name="password" type="password" autocomplete="new-password" minlength="6" required>
+      </label>
+      <label>
+        确认密码
+        <input name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
       </label>
       <div class="status" id="status" aria-live="polite"></div>
-      <button type="submit">登录</button>
+      <button type="submit">创建管理员账号</button>
     </form>
   </main>
 
   <script>
-    const form = document.querySelector('#loginForm');
+    const form = document.querySelector('#registerForm');
     const statusBox = document.querySelector('#status');
     const button = form.querySelector('button');
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect') || '/admin/';
 
-    async function redirectToRegisterWhenNeeded() {
+    async function ensureRegistrationAvailable() {
       try {
         const response = await fetch('/api/v1/admin/auth/setup', {cache: 'no-store'});
         const result = await response.json();
-        if (response.ok && result.code === 0 && result.data.registrationAvailable) {
-          window.location.replace('/admin/register.html');
+        if (response.ok && result.code === 0 && !result.data.registrationAvailable) {
+          window.location.replace('/admin/login.html');
         }
       } catch {
         statusBox.textContent = '无法读取初始化状态';
@@ -137,23 +139,29 @@
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       statusBox.textContent = '';
-      button.disabled = true;
 
       const data = new FormData(form);
+      const password = data.get('password');
+      if (password !== data.get('confirmPassword')) {
+        statusBox.textContent = '两次输入的密码不一致';
+        return;
+      }
+
+      button.disabled = true;
       try {
-        const response = await fetch('/api/v1/admin/auth/login', {
+        const response = await fetch('/api/v1/admin/auth/register', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
             username: data.get('username'),
-            password: data.get('password')
+            password
           })
         });
         const result = await response.json();
         if (!response.ok || result.code !== 0) {
-          throw new Error(result.message || '登录失败');
+          throw new Error(result.message || '注册失败');
         }
-        window.location.href = redirect.startsWith('/') ? redirect : '/admin/';
+        window.location.href = '/admin/';
       } catch (error) {
         statusBox.textContent = error.message;
       } finally {
@@ -161,7 +169,7 @@
       }
     });
 
-    redirectToRegisterWhenNeeded();
+    ensureRegistrationAvailable();
   </script>
 </body>
 </html>

@@ -8,6 +8,7 @@
       content="Clark AAMS 是面向高校课表导入与本地课表管理的开源应用，提供 Spring Boot 后端与 Flutter 客户端。"
     />
     <title>Clark AAMS | 珂拉课程表</title>
+    <link rel="icon" href="/favicon.ico" />
     <link rel="icon" href="/site/logo.png" />
     <link rel="stylesheet" href="/site/styles.css" />
   </head>
@@ -19,6 +20,7 @@
       </a>
       <nav class="nav-links" aria-label="主导航">
         <a href="#features">功能</a>
+        <a href="#recognize">识别</a>
         <a href="#platform">架构</a>
         <a href="#api">接口</a>
         <a href="#source">开源</a>
@@ -77,6 +79,55 @@
               <div class="course-card rose">形势政策<br /><small>D102</small></div>
               <div></div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tool-section" id="recognize">
+        <div class="tool-copy">
+          <p class="eyebrow">Course OCR</p>
+          <h2>上传课表截图，生成可取回的课程 JSON</h2>
+          <p>
+            选择一张或多张课表图片，服务端会调用已配置的视觉模型识别课程，
+            保存原图与 JSON，并生成 8 位取件码。
+          </p>
+        </div>
+
+        <div class="tool-panel">
+          <div class="tool-tabs" role="tablist" aria-label="课表识别工具">
+            <button class="tool-tab active" type="button" data-mode="upload">上传识别</button>
+            <button class="tool-tab" type="button" data-mode="pickup">取件码查询</button>
+          </div>
+
+          <form class="tool-form active" id="upload-form">
+            <div class="drop-zone" id="drop-zone">
+              <input id="image-input" name="images" type="file" accept="image/*" multiple required />
+              <div class="drop-icon">+</div>
+              <strong>拖入课表图片，或点击选择文件</strong>
+              <span>支持多张截图，建议上传完整周视图或连续截图。</span>
+            </div>
+            <div class="file-list" id="file-list">尚未选择图片</div>
+            <button class="primary-action" type="submit">上传并识别</button>
+          </form>
+
+          <form class="tool-form" id="pickup-form">
+            <label>
+              取件码
+              <input name="code" maxlength="8" autocomplete="off" placeholder="例如 A7K9Q2TX" required />
+            </label>
+            <button class="primary-action" type="submit">查询 JSON</button>
+          </form>
+
+          <div class="pickup-result">
+            <div class="pickup-head">
+              <span id="tool-status">等待操作</span>
+              <strong id="pickup-code"></strong>
+            </div>
+            <div class="progress-track" id="progress-track" aria-hidden="true">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="tool-hint" id="tool-hint">上传后会返回课程 JSON，并生成 8 位取件码用于后续取回。</div>
+            <textarea id="course-json" spellcheck="false" placeholder="识别或查询结果会显示在这里"></textarea>
           </div>
         </div>
       </section>
@@ -155,6 +206,11 @@
             <strong>/api/v1/schools</strong>
             <em>学校列表</em>
           </a>
+          <a class="api-row" href="#recognize">
+            <span>POST</span>
+            <strong>/api/v1/course-pickups</strong>
+            <em>图片识别并生成取件码</em>
+          </a>
           <a class="api-row" href="/docs/school-importer-development.md">
             <span>DOC</span>
             <strong>/docs/school-importer-development.md</strong>
@@ -179,8 +235,227 @@
       <a href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
     </footer>
 
+    <div class="modal-backdrop" id="pickup-modal" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pickup-modal-title">
+        <button class="modal-close" id="modal-close" type="button" aria-label="关闭">×</button>
+        <p class="eyebrow">Pickup Code</p>
+        <h2 id="pickup-modal-title">课程 JSON 已生成</h2>
+        <p>请保存取件码，之后可以用它重新获取本次识别出的 JSON。</p>
+        <div class="modal-code" id="modal-code"></div>
+        <div class="modal-actions">
+          <button class="primary-action" id="copy-code-button" type="button">复制取件码</button>
+          <button class="secondary-action" id="modal-ok-button" type="button">关闭</button>
+        </div>
+        <div class="copy-status" id="copy-status"></div>
+      </div>
+    </div>
+
     <script>
       const statusBox = document.querySelector("#api-status");
+      const toolStatus = document.querySelector("#tool-status");
+      const toolHint = document.querySelector("#tool-hint");
+      const pickupCode = document.querySelector("#pickup-code");
+      const courseJson = document.querySelector("#course-json");
+      const uploadForm = document.querySelector("#upload-form");
+      const pickupForm = document.querySelector("#pickup-form");
+      const imageInput = document.querySelector("#image-input");
+      const dropZone = document.querySelector("#drop-zone");
+      const fileList = document.querySelector("#file-list");
+      const progressTrack = document.querySelector("#progress-track");
+      const progressBar = document.querySelector("#progress-bar");
+      const pickupModal = document.querySelector("#pickup-modal");
+      const modalCode = document.querySelector("#modal-code");
+      const copyCodeButton = document.querySelector("#copy-code-button");
+      const modalClose = document.querySelector("#modal-close");
+      const modalOkButton = document.querySelector("#modal-ok-button");
+      const copyStatus = document.querySelector("#copy-status");
+      const tabs = document.querySelectorAll(".tool-tab");
+      let lastPickupCode = "";
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const mode = tab.dataset.mode;
+          tabs.forEach((item) => item.classList.toggle("active", item === tab));
+          uploadForm.classList.toggle("active", mode === "upload");
+          pickupForm.classList.toggle("active", mode === "pickup");
+          resetProgress();
+        });
+      });
+
+      dropZone.addEventListener("click", () => imageInput.click());
+      imageInput.addEventListener("change", renderSelectedFiles);
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropZone.classList.add("dragging");
+        });
+      });
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropZone.classList.remove("dragging");
+        });
+      });
+      dropZone.addEventListener("drop", (event) => {
+        const files = Array.from(event.dataTransfer.files).filter((file) => file.type.startsWith("image/"));
+        if (files.length === 0) {
+          setToolState("未发现可用图片", "", "请拖入 PNG、JPG、WebP 等图片文件。");
+          return;
+        }
+        const transfer = new DataTransfer();
+        files.forEach((file) => transfer.items.add(file));
+        imageInput.files = transfer.files;
+        renderSelectedFiles();
+      });
+
+      uploadForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (imageInput.files.length === 0) {
+          setToolState("请选择课表图片", "", "可以点击上传区域选择，也可以直接拖入图片。");
+          return;
+        }
+        setToolState("准备上传", "", "正在整理图片，请保持页面打开。");
+        setProgress(4);
+        const formData = new FormData();
+        for (const file of imageInput.files) {
+          formData.append("images", file);
+        }
+        try {
+          const result = await uploadWithProgress(formData);
+          setToolState("识别完成", result.data.pickupCode);
+          setProgress(100);
+          courseJson.value = JSON.stringify(result.data.courses, null, 2);
+          showPickupModal(result.data.pickupCode);
+        } catch (error) {
+          setToolState(error.message, "", "请确认后台 AI 配置可用，并重新上传完整截图。");
+          setProgress(0);
+          courseJson.value = "";
+        }
+      });
+
+      pickupForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const code = pickupForm.code.value.trim().toUpperCase();
+        setToolState("正在查询", code, "正在按取件码获取 JSON，请稍候。");
+        setProgress(35);
+        try {
+          const response = await fetch(`/api/v1/course-pickups/${encodeURIComponent(code)}`, {
+            cache: "no-store"
+          });
+          const text = await response.text();
+          if (!response.ok) {
+            throw new Error(text || `HTTP ${response.status}`);
+          }
+          setToolState("查询完成", code);
+          setProgress(100);
+          courseJson.value = JSON.stringify(JSON.parse(text), null, 2);
+        } catch (error) {
+          setToolState(error.message, code, "请检查取件码是否正确，或确认该记录没有被后台删除。");
+          setProgress(0);
+          courseJson.value = "";
+        }
+      });
+
+      function uploadWithProgress(formData) {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/v1/course-pickups");
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              const uploaded = Math.round((event.loaded / event.total) * 45);
+              setProgress(Math.max(8, uploaded));
+              setToolState("正在上传图片", "", "图片上传完成后会进入 AI 识别阶段。");
+            }
+          });
+          xhr.addEventListener("load", () => {
+            try {
+              const result = JSON.parse(xhr.responseText || "{}");
+              if (xhr.status < 200 || xhr.status >= 300 || result.code !== 0) {
+                reject(new Error(result.message || `HTTP ${xhr.status}`));
+                return;
+              }
+              setProgress(92);
+              setToolState("正在生成 JSON", result.data.pickupCode || "", "AI 识别已完成，正在整理返回结果。");
+              resolve(result);
+            } catch (error) {
+              reject(error);
+            }
+          });
+          xhr.addEventListener("error", () => reject(new Error("网络请求失败")));
+          xhr.addEventListener("timeout", () => reject(new Error("识别请求超时")));
+          xhr.timeout = 180000;
+          setTimeout(() => {
+            if (progressBar.style.width !== "100%") {
+              setProgress(62);
+              setToolState("AI 正在识别", "", "课表截图较多时会花一些时间。");
+            }
+          }, 900);
+          xhr.send(formData);
+        });
+      }
+
+      function renderSelectedFiles() {
+        const files = Array.from(imageInput.files);
+        if (files.length === 0) {
+          fileList.textContent = "尚未选择图片";
+          return;
+        }
+        fileList.innerHTML = files.map((file) => `<span>${escapeHtml(file.name)}</span>`).join("");
+        setToolState(`已选择 ${files.length} 张图片`, "", "点击上传后会开始识别并生成取件码。");
+      }
+
+      function setToolState(message, code, hint = "") {
+        toolStatus.textContent = message;
+        pickupCode.textContent = code ? `取件码 ${code}` : "";
+        toolHint.textContent = hint || "上传后会返回课程 JSON，并生成 8 位取件码用于后续取回。";
+      }
+
+      function setProgress(value) {
+        progressTrack.classList.toggle("active", value > 0 && value < 100);
+        progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
+      }
+
+      function resetProgress() {
+        setProgress(0);
+      }
+
+      function showPickupModal(code) {
+        lastPickupCode = code;
+        modalCode.textContent = code;
+        copyStatus.textContent = "";
+        pickupModal.hidden = false;
+      }
+
+      function closePickupModal() {
+        pickupModal.hidden = true;
+      }
+
+      async function copyPickupCode() {
+        try {
+          await navigator.clipboard.writeText(lastPickupCode);
+          copyStatus.textContent = "已复制";
+        } catch {
+          copyStatus.textContent = "复制失败，请手动选择取件码";
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      copyCodeButton.addEventListener("click", copyPickupCode);
+      modalClose.addEventListener("click", closePickupModal);
+      modalOkButton.addEventListener("click", closePickupModal);
+      pickupModal.addEventListener("click", (event) => {
+        if (event.target === pickupModal) {
+          closePickupModal();
+        }
+      });
 
       fetch("/api/v1/health", { cache: "no-store" })
         .then((response) => response.json())

@@ -1,5 +1,7 @@
 package io.github.tissyboxc.clark_aams_backend;
 
+import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupRecordDto;
+import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.hasSize;
@@ -27,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "clark-aams.client-version.config-path=${java.io.tmpdir}/clark-aams-backend-test-client-version.json",
+        "clark-aams.pickup.storage-dir=${java.io.tmpdir}/clark-aams-backend-test-pickups",
         "clark-aams.admin.username=test-admin",
         "clark-aams.admin.password=test-password"
 })
@@ -36,6 +40,9 @@ class ApiContractTests {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private CoursePickupStore pickupStore;
 
     @Test
     void listSchoolsReturnsBuiltInJitSchool() throws Exception {
@@ -53,6 +60,12 @@ class ApiContractTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.status").value("UP"));
+    }
+
+    @Test
+    void faviconIsServedAsStaticResource() throws Exception {
+        mockMvc.perform(get("/favicon.ico"))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -253,6 +266,29 @@ class ApiContractTests {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.updateType").value("required"))
                 .andExpect(jsonPath("$.data.forceUpdate").value(true));
+    }
+
+    @Test
+    void pickupCodeReturnsStoredCourseJson() throws Exception {
+        CoursePickupRecordDto record = pickupStore.create("""
+                [
+                  {
+                    "name": "测试课程",
+                    "teacher": "测试教师",
+                    "position": "A101",
+                    "day": 1,
+                    "startSection": 1,
+                    "endSection": 2,
+                    "weeks": [1, 2],
+                    "rawTime": "1-2周,星期1,第1节-第2节"
+                  }
+                ]
+                """, List.of());
+
+        mockMvc.perform(get("/api/v1/course-pickups/{code}", record.code()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("测试课程"))
+                .andExpect(jsonPath("$[0].weeks", hasSize(2)));
     }
 
     private MockHttpSession loginAsAdmin() throws Exception {

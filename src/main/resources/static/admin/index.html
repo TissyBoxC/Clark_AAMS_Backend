@@ -150,6 +150,28 @@
         <div>最低支持：<span id="minimumVersion">加载中</span></div>
       </div>
     </section>
+
+    <section class="panel">
+      <h2>AI 识别配置</h2>
+      <p>配置视觉模型的 Base URL、API Key 和模型名，并测试课表图片识别。</p>
+      <div class="actions">
+        <a class="button" href="/admin/ai.html">进入 AI 配置</a>
+      </div>
+      <div class="status">
+        <div>接口：<span id="aiState">加载中</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>取件码管理</h2>
+      <p>查看网页上传生成的取件码、课程 JSON 和原始图片。</p>
+      <div class="actions">
+        <a class="button" href="/admin/pickups.html">进入取件码管理</a>
+      </div>
+      <div class="status">
+        <div>记录：<span id="pickupState">加载中</span></div>
+      </div>
+    </section>
   </div>
 </main>
 
@@ -158,16 +180,22 @@
   const schoolsState = document.querySelector('#schoolsState');
   const latestVersion = document.querySelector('#latestVersion');
   const minimumVersion = document.querySelector('#minimumVersion');
+  const aiState = document.querySelector('#aiState');
+  const pickupState = document.querySelector('#pickupState');
 
   async function load() {
     try {
-      const [healthResponse, configResponse] = await Promise.all([
+      const [healthResponse, configResponse, aiResponse, pickupResponse] = await Promise.all([
         fetch('/api/v1/health'),
-        fetch('/api/v1/admin/app-version/config')
+        fetch('/api/v1/admin/app-version/config'),
+        fetch('/api/v1/admin/ai/config'),
+        fetch('/api/v1/admin/course-pickups')
       ]);
 
       const healthResult = await healthResponse.json();
       const configResult = await configResponse.json();
+      const aiResult = await aiResponse.json();
+      const pickupResult = await pickupResponse.json();
 
       if (healthResponse.ok && healthResult.code === 0) {
         healthBadge.textContent = healthResult.data.status || 'UP';
@@ -185,12 +213,26 @@
         latestVersion.textContent = '不可用';
         minimumVersion.textContent = '不可用';
       }
+
+      if (aiResponse.ok && aiResult.code === 0) {
+        aiState.textContent = aiResult.data.apiKeyConfigured ? '已配置' : '未配置 API Key';
+      } else {
+        aiState.textContent = '不可用';
+      }
+
+      if (pickupResponse.ok && pickupResult.code === 0) {
+        pickupState.textContent = `${pickupResult.data.length} 条`;
+      } else {
+        pickupState.textContent = '不可用';
+      }
     } catch (error) {
       healthBadge.textContent = '离线';
       healthBadge.classList.add('warn');
       schoolsState.textContent = error.message;
       latestVersion.textContent = '无法读取';
       minimumVersion.textContent = '无法读取';
+      aiState.textContent = '无法读取';
+      pickupState.textContent = '无法读取';
     }
   }
 

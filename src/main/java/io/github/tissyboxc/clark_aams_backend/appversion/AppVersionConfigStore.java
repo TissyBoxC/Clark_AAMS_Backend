@@ -9,6 +9,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,7 +38,12 @@ public class AppVersionConfigStore {
     public void initialize() {
         configPath = resolveConfigPath();
         if (Files.exists(configPath)) {
-            apply(readConfig(configPath));
+            AppVersionConfigDto config = readConfig(configPath);
+            AppVersionConfigDto repaired = repairMojibake(config);
+            apply(repaired);
+            if (!repaired.equals(config)) {
+                writeConfig(configPath, repaired);
+            }
             return;
         }
         writeConfig(configPath, current());
@@ -178,6 +184,67 @@ public class AppVersionConfigStore {
                         normalize(source.description())
                 ))
                 .toList();
+    }
+
+    private AppVersionConfigDto repairMojibake(AppVersionConfigDto config) {
+        if (config == null) {
+            return snapshot();
+        }
+        return new AppVersionConfigDto(
+                normalize(config.latestVersion()),
+                config.latestBuild(),
+                normalize(config.minimumSupportedVersion()),
+                config.minimumSupportedBuild(),
+                repairText(config.title()),
+                repairText(config.optionalUpdateMessage()),
+                repairText(config.requiredUpdateMessage()),
+                normalize(config.releasePageUrl()),
+                repairTextList(config.releaseNotes()),
+                repairDownloadSources(config.downloadSources())
+        );
+    }
+
+    private List<String> repairTextList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+        return values.stream()
+                .map(this::repairText)
+                .filter(value -> !value.isBlank())
+                .toList();
+    }
+
+    private List<DownloadSourceDto> repairDownloadSources(List<DownloadSourceDto> values) {
+        if (values == null) {
+            return List.of();
+        }
+        return values.stream()
+                .filter(source -> source != null)
+                .map(source -> new DownloadSourceDto(
+                        normalize(source.type()),
+                        repairText(source.label()),
+                        normalize(source.url()),
+                        source.primary(),
+                        repairText(source.description())
+                ))
+                .filter(source -> !source.url().isBlank())
+                .toList();
+    }
+
+    private String repairText(String value) {
+        String normalized = normalize(value);
+        if (!looksMojibake(normalized)) {
+            return normalized;
+        }
+        return new String(normalized.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+    }
+
+    private boolean looksMojibake(String value) {
+        return value.contains("Ã")
+                || value.contains("Â")
+                || value.contains("å")
+                || value.contains("ç")
+                || value.contains("ä");
     }
 
     private List<AppVersionProperties.DownloadSource> toPropertyDownloadSources(List<DownloadSourceDto> values) {

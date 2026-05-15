@@ -46,7 +46,8 @@ public class GlobalExceptionHandler {
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case LOGIN_INVALID -> HttpStatus.UNAUTHORIZED;
             case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case ACADEMIC_REQUEST_FAILED, COURSE_PARSE_FAILED, INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+            case ACADEMIC_REQUEST_FAILED, COURSE_PARSE_FAILED, INTERNAL_ERROR, AI_REQUEST_FAILED ->
+                    HttpStatus.INTERNAL_SERVER_ERROR;
             case OK -> HttpStatus.OK;
         };
     }

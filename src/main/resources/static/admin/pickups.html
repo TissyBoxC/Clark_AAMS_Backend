@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>取件码管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --line: #d7deea;
+      --text: #1f2530;
+      --muted: #5f6b7a;
+      --primary: #155eef;
+      --primary-hover: #0f4dd0;
+      --danger: #b42318;
+      --soft: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .bar {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 16px; }
+    nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 18px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .panel-title {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .panel-body {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+    button, a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border-radius: 6px;
+      border: 1px solid var(--primary);
+      padding: 0 12px;
+      background: var(--primary);
+      color: #fff;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button:hover, a.button:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    button.secondary, a.button.secondary {
+      background: var(--surface);
+      color: var(--primary);
+    }
+    button.secondary:hover, a.button.secondary:hover {
+      background: #eef4ff;
+      color: var(--primary-hover);
+    }
+    button.danger {
+      border-color: var(--danger);
+      background: var(--danger);
+    }
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .status.error { color: var(--danger); }
+    .record-list {
+      display: grid;
+      gap: 8px;
+    }
+    .record-button {
+      width: 100%;
+      min-height: 54px;
+      justify-content: space-between;
+      border-color: var(--line);
+      background: var(--surface);
+      color: var(--text);
+      text-align: left;
+    }
+    .record-button.active,
+    .record-button:hover {
+      border-color: rgba(21, 94, 239, 0.5);
+      background: #eef4ff;
+      color: var(--primary-hover);
+    }
+    .code {
+      font: 700 15px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: 0;
+    }
+    .meta {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+    }
+    textarea {
+      width: 100%;
+      min-height: 440px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      resize: vertical;
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+      color: var(--text);
+      background: var(--surface);
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .detail-head {
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .image-item {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+    .image-item img {
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+    .image-name {
+      overflow-wrap: anywhere;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 920px) {
+      main { grid-template-columns: 1fr; }
+      .bar { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div>
+      <h1>取件码管理</h1>
+      <p class="status">管理网页上传生成的取件码、课程 JSON 和原始图片。</p>
+    </div>
+    <nav>
+      <a class="button secondary" href="/admin/index.html">管理台</a>
+      <a class="button secondary" href="/admin/ai.html">AI 配置</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-title">
+      <h2>记录</h2>
+      <button class="secondary" id="reloadButton" type="button">刷新</button>
+    </div>
+    <div class="panel-body">
+      <div class="status" id="listStatus">未加载</div>
+      <div class="record-list" id="recordList"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">
+      <h2>详情</h2>
+      <span class="status" id="detailStatus">请选择记录</span>
+    </div>
+    <div class="panel-body" id="detailPanel">
+      <div class="status">从左侧选择一个取件码。</div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const recordList = document.querySelector('#recordList');
+  const listStatus = document.querySelector('#listStatus');
+  const detailStatus = document.querySelector('#detailStatus');
+  const detailPanel = document.querySelector('#detailPanel');
+  const reloadButton = document.querySelector('#reloadButton');
+  let selectedCode = '';
+  let records = [];
+
+  async function loadList() {
+    setStatus(listStatus, '正在加载');
+    try {
+      const response = await fetch('/api/v1/admin/course-pickups');
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      records = result.data || [];
+      renderList();
+      setStatus(listStatus, `${records.length} 条记录`);
+      if (selectedCode && records.some((record) => record.code === selectedCode)) {
+        await loadDetail(selectedCode);
+      } else if (records.length > 0) {
+        await loadDetail(records[0].code);
+      } else {
+        selectedCode = '';
+        detailPanel.innerHTML = '<div class="status">暂无记录。</div>';
+        setStatus(detailStatus, '请选择记录');
+      }
+    } catch (error) {
+      setStatus(listStatus, error.message, true);
+    }
+  }
+
+  function renderList() {
+    recordList.innerHTML = records.map((record) => `
+      <button class="record-button ${record.code === selectedCode ? 'active' : ''}" data-code="${escapeAttr(record.code)}" type="button">
+        <span>
+          <span class="code">${escapeHtml(record.code)}</span>
+          <span class="meta">${record.imageCount} 张图片 · ${escapeHtml(record.createdAt || '')}</span>
+        </span>
+      </button>
+    `).join('');
+    recordList.querySelectorAll('[data-code]').forEach((button) => {
+      button.addEventListener('click', () => loadDetail(button.dataset.code));
+    });
+  }
+
+  async function loadDetail(code) {
+    selectedCode = code;
+    renderList();
+    setStatus(detailStatus, '正在加载');
+    try {
+      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`);
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      renderDetail(result.data);
+      setStatus(detailStatus, '已加载');
+    } catch (error) {
+      setStatus(detailStatus, error.message, true);
+    }
+  }
+
+  function renderDetail(record) {
+    const images = record.images || [];
+    detailPanel.innerHTML = `
+      <div class="detail-head">
+        <div><span class="status">取件码</span> <span class="code">${escapeHtml(record.code)}</span></div>
+        <div class="status">创建：${escapeHtml(record.createdAt || '')}</div>
+        <div class="status">更新：${escapeHtml(record.updatedAt || '')}</div>
+      </div>
+      <div class="actions">
+        <button type="button" id="saveJsonButton">保存 JSON</button>
+        <button class="secondary" type="button" id="copyCodeButton">复制取件码</button>
+        <button class="danger" type="button" id="deleteRecordButton">删除记录</button>
+      </div>
+      <textarea id="jsonText" spellcheck="false">${escapeHtml(formatJson(record.jsonText || '[]'))}</textarea>
+      <h2>图片</h2>
+      <div class="image-grid">
+        ${images.map((image) => `
+          <div class="image-item">
+            <img src="/api/v1/admin/course-pickups/${encodeURIComponent(record.code)}/images/${encodeURIComponent(image.fileName)}" alt="">
+            <div class="image-name">${escapeHtml(image.originalName || image.fileName)}</div>
+            <button class="secondary" type="button" data-image="${escapeAttr(image.fileName)}">删除图片</button>
+          </div>
+        `).join('') || '<div class="status">无图片</div>'}
+      </div>
+    `;
+    document.querySelector('#saveJsonButton').addEventListener('click', () => saveJson(record.code));
+    document.querySelector('#copyCodeButton').addEventListener('click', () => navigator.clipboard.writeText(record.code));
+    document.querySelector('#deleteRecordButton').addEventListener('click', () => deleteRecord(record.code));
+    detailPanel.querySelectorAll('[data-image]').forEach((button) => {
+      button.addEventListener('click', () => deleteImage(record.code, button.dataset.image));
+    });
+  }
+
+  async function saveJson(code) {
+    setStatus(detailStatus, '正在保存');
+    try {
+      const jsonText = document.querySelector('#jsonText').value;
+      JSON.parse(jsonText);
+      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({jsonText})
+      });
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      renderDetail(result.data);
+      setStatus(detailStatus, '已保存');
+    } catch (error) {
+      setStatus(detailStatus, error.message, true);
+    }
+  }
+
+  async function deleteRecord(code) {
+    if (!confirm(`删除取件码 ${code}？`)) {
+      return;
+    }
+    setStatus(detailStatus, '正在删除');
+    try {
+      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`, {method: 'DELETE'});
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      selectedCode = '';
+      await loadList();
+    } catch (error) {
+      setStatus(detailStatus, error.message, true);
+    }
+  }
+
+  async function deleteImage(code, fileName) {
+    if (!confirm(`删除图片 ${fileName}？`)) {
+      return;
+    }
+    setStatus(detailStatus, '正在删除图片');
+    try {
+      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}/images/${encodeURIComponent(fileName)}`, {method: 'DELETE'});
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      await loadDetail(code);
+      await loadList();
+    } catch (error) {
+      setStatus(detailStatus, error.message, true);
+    }
+  }
+
+  function formatJson(value) {
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+      return value;
+    }
+  }
+
+  function setStatus(element, message, error = false) {
+    element.textContent = message;
+    element.classList.toggle('error', error);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replaceAll('`', '&#096;');
+  }
+
+  reloadButton.addEventListener('click', loadList);
+  loadList();
+</script>
+</body>
+</html>

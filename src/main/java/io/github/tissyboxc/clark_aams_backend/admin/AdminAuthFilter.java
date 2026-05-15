@@ -19,8 +19,15 @@ import java.nio.charset.StandardCharsets;
 @Order(1)
 public class AdminAuthFilter implements Filter {
     private static final String LOGIN_PAGE = "/admin/login.html";
+    private static final String REGISTER_PAGE = "/admin/register.html";
     private static final String ADMIN_AUTH_API_PREFIX = "/api/v1/admin/auth/";
     private static final String ADMIN_API_PREFIX = "/api/v1/admin/";
+
+    private final AdminCredentialStore credentialStore;
+
+    public AdminAuthFilter(AdminCredentialStore credentialStore) {
+        this.credentialStore = credentialStore;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -28,6 +35,11 @@ public class AdminAuthFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         String path = normalizePath(httpRequest);
+
+        if (!credentialStore.configured() && requiresSetupRedirect(path)) {
+            httpResponse.sendRedirect(REGISTER_PAGE);
+            return;
+        }
 
         if (!requiresAuthentication(path) || isAuthenticated(httpRequest)) {
             chain.doFilter(request, response);
@@ -43,7 +55,9 @@ public class AdminAuthFilter implements Filter {
     }
 
     private boolean requiresAuthentication(String path) {
-        if (path.equals(LOGIN_PAGE) || path.startsWith(ADMIN_AUTH_API_PREFIX)) {
+        if (path.equals(LOGIN_PAGE)
+                || path.equals(REGISTER_PAGE)
+                || path.startsWith(ADMIN_AUTH_API_PREFIX)) {
             return false;
         }
         return path.equals("/admin")
@@ -54,6 +68,17 @@ public class AdminAuthFilter implements Filter {
 
     private boolean isAdminApi(String path) {
         return path.startsWith(ADMIN_API_PREFIX) && !path.startsWith(ADMIN_AUTH_API_PREFIX);
+    }
+
+    private boolean requiresSetupRedirect(String path) {
+        if (path.equals(REGISTER_PAGE) || path.startsWith(ADMIN_AUTH_API_PREFIX)) {
+            return false;
+        }
+        return path.equals(LOGIN_PAGE)
+                || path.equals("/admin")
+                || path.equals("/admin/")
+                || path.startsWith("/admin/")
+                || isAdminApi(path);
     }
 
     private boolean isAuthenticated(HttpServletRequest request) {
