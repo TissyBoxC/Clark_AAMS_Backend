@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clark AAMS 管理台</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --line: #d7deea;
+      --text: #1f2530;
+      --muted: #5f6b7a;
+      --primary: #155eef;
+      --primary-hover: #0f4dd0;
+      --ok: #12754a;
+      --warn: #8a5b00;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 18px 20px;
+    }
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 22px; }
+    .subtle { color: var(--muted); margin-top: 6px; }
+    main { padding: 20px; }
+    .grid {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 220px;
+    }
+    .panel h2 { font-size: 18px; margin-bottom: 8px; }
+    .panel p { color: var(--muted); margin-bottom: 16px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    a.button, button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font: inherit;
+      cursor: pointer;
+    }
+    a.button.secondary, button.secondary {
+      background: var(--surface);
+      color: var(--primary);
+    }
+    a.button:hover, button:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    a.button.secondary:hover, button.secondary:hover {
+      background: #eef4ff;
+      color: var(--primary-hover);
+    }
+    .status {
+      display: grid;
+      gap: 8px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .topline { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="topline">
+      <div>
+        <h1>Clark AAMS 管理台</h1>
+        <div class="subtle">学校适配器与客户端版本管理入口</div>
+      </div>
+      <span class="badge" id="healthBadge">检查中</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="panel">
+      <h2>学校管理</h2>
+      <p>查看现有学校适配器，并生成新的学校 scaffold。</p>
+      <div class="actions">
+        <a class="button" href="/admin/schools.html">进入学校界面</a>
+      </div>
+      <div class="status">
+        <div>接口：<span id="schoolsState">加载中</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>版本管理</h2>
+      <p>维护客户端最新版本、最低支持版本、下载源和更新提示。</p>
+      <div class="actions">
+        <a class="button" href="/admin/versions.html">进入版本界面</a>
+      </div>
+      <div class="status">
+        <div>最新版本：<span id="latestVersion">加载中</span></div>
+        <div>最低支持：<span id="minimumVersion">加载中</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const healthBadge = document.querySelector('#healthBadge');
+  const schoolsState = document.querySelector('#schoolsState');
+  const latestVersion = document.querySelector('#latestVersion');
+  const minimumVersion = document.querySelector('#minimumVersion');
+
+  async function load() {
+    try {
+      const [healthResponse, configResponse] = await Promise.all([
+        fetch('/api/v1/health'),
+        fetch('/api/v1/admin/app-version/config')
+      ]);
+
+      const healthResult = await healthResponse.json();
+      const configResult = await configResponse.json();
+
+      if (healthResponse.ok && healthResult.code === 0) {
+        healthBadge.textContent = healthResult.data.status || 'UP';
+        healthBadge.classList.add('ok');
+      } else {
+        healthBadge.textContent = '异常';
+        healthBadge.classList.add('warn');
+      }
+
+      schoolsState.textContent = '可用';
+      if (configResponse.ok && configResult.code === 0) {
+        latestVersion.textContent = `${configResult.data.latestVersion} (${configResult.data.latestBuild})`;
+        minimumVersion.textContent = `${configResult.data.minimumSupportedVersion} (${configResult.data.minimumSupportedBuild})`;
+      } else {
+        latestVersion.textContent = '不可用';
+        minimumVersion.textContent = '不可用';
+      }
+    } catch (error) {
+      healthBadge.textContent = '离线';
+      healthBadge.classList.add('warn');
+      schoolsState.textContent = error.message;
+      latestVersion.textContent = '无法读取';
+      minimumVersion.textContent = '无法读取';
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

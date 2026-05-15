@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clark AAMS 后台登录</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --line: #d7deea;
+      --text: #1f2530;
+      --muted: #667085;
+      --primary: #155eef;
+      --primary-hover: #0f4dd0;
+      --danger: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(21, 94, 239, 0.14), transparent 28rem),
+        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .login-panel {
+      width: min(100%, 420px);
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 22px 60px rgba(38, 57, 92, 0.14);
+    }
+
+    h1, p { margin: 0; }
+    h1 { font-size: 24px; }
+    p { margin-top: 8px; color: var(--muted); }
+
+    form {
+      display: grid;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 11px 12px;
+      color: var(--text);
+      background: #fff;
+      font: inherit;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(21, 94, 239, 0.12);
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      background: var(--primary);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--primary-hover); }
+    button:disabled { cursor: wait; opacity: 0.7; }
+
+    .status {
+      min-height: 22px;
+      color: var(--danger);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-panel">
+    <h1>后台管理登录</h1>
+    <p>请输入管理员账号后继续访问 Clark AAMS 管理页面。</p>
+
+    <form id="loginForm">
+      <label>
+        账号
+        <input name="username" autocomplete="username" required autofocus>
+      </label>
+      <label>
+        密码
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <div class="status" id="status" aria-live="polite"></div>
+      <button type="submit">登录</button>
+    </form>
+  </main>
+
+  <script>
+    const form = document.querySelector('#loginForm');
+    const statusBox = document.querySelector('#status');
+    const button = form.querySelector('button');
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect') || '/admin/';
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      statusBox.textContent = '';
+      button.disabled = true;
+
+      const data = new FormData(form);
+      try {
+        const response = await fetch('/api/v1/admin/auth/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            username: data.get('username'),
+            password: data.get('password')
+          })
+        });
+        const result = await response.json();
+        if (!response.ok || result.code !== 0) {
+          throw new Error(result.message || '登录失败');
+        }
+        window.location.href = redirect.startsWith('/') ? redirect : '/admin/';
+      } catch (error) {
+        statusBox.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

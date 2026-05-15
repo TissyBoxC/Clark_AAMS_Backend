@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Clark AAMS 是面向高校课表导入与本地课表管理的开源应用，提供 Spring Boot 后端与 Flutter 客户端。"
+    />
+    <title>Clark AAMS | 珂拉课程表</title>
+    <link rel="icon" href="/site/logo.png" />
+    <link rel="stylesheet" href="/site/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Clark AAMS 首页">
+        <img src="/site/logo.png" alt="" />
+        <span>Clark AAMS</span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="#features">功能</a>
+        <a href="#platform">架构</a>
+        <a href="#api">接口</a>
+        <a href="#source">开源</a>
+      </nav>
+      <a class="github-link" href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Flutter 课程表客户端 + Spring Boot 服务端</p>
+          <h1>珂拉课程表</h1>
+          <p class="hero-text">
+            一个为高校教务系统适配而设计的课表工具。客户端负责清爽的本地课表体验，
+            后端提供学校配置、教务导入、版本检查与管理能力。
+          </p>
+          <div class="hero-actions">
+            <a class="primary-action" href="/docs/flutter-backend-integration.md">查看接入文档</a>
+            <a class="secondary-action" href="/docs/school-importer-development.md">学校适配文档</a>
+          </div>
+          <div class="status-strip" id="api-status" aria-live="polite">
+            <span class="status-dot"></span>
+            <span>正在检查后端状态</span>
+          </div>
+        </div>
+
+        <div class="phone-wrap" aria-label="课程表界面预览">
+          <div class="phone">
+            <div class="phone-top">
+              <span>第 6 周</span>
+              <strong>课程表</strong>
+              <span>JIT</span>
+            </div>
+            <div class="week-row">
+              <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span>
+            </div>
+            <div class="schedule-grid">
+              <div class="lesson-index">1</div>
+              <div class="course-card blue">高等数学<br /><small>A101</small></div>
+              <div></div>
+              <div class="course-card green">英语听说<br /><small>B304</small></div>
+              <div></div>
+              <div></div>
+
+              <div class="lesson-index">3</div>
+              <div></div>
+              <div class="course-card purple">数据结构<br /><small>实验楼</small></div>
+              <div></div>
+              <div class="course-card amber">体育<br /><small>操场</small></div>
+              <div></div>
+
+              <div class="lesson-index">5</div>
+              <div class="course-card cyan">线性代数<br /><small>C208</small></div>
+              <div></div>
+              <div></div>
+              <div class="course-card rose">形势政策<br /><small>D102</small></div>
+              <div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="section-heading">
+          <p class="eyebrow">Capabilities</p>
+          <h2>为课表导入和维护准备的核心能力</h2>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="feature-icon">校</span>
+            <h3>学校配置</h3>
+            <p>后端按学校拆分能力，当前已内置金陵科技学院 JIT 配置，并保留继续扩展的结构。</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon">导</span>
+            <h3>教务导入</h3>
+            <p>通过登录会话提交教务数据，服务端解析课程信息，返回客户端统一的课程模型。</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon">版</span>
+            <h3>版本检查</h3>
+            <p>客户端可向后端查询更新策略、发布说明与下载来源，支持可选更新和强制更新。</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon">管</span>
+            <h3>管理入口</h3>
+            <p>后端自带静态管理页，用于维护学校脚手架与版本配置，便于后续适配更多学校。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="split-section" id="platform">
+        <div>
+          <p class="eyebrow">Architecture</p>
+          <h2>移动端保留本地体验，服务端专注公共能力</h2>
+          <p>
+            Clark AAMS 的客户端使用 Flutter 与 Material 3 构建课程表体验，
+            课程与设置保存在本地。Spring Boot 后端则承担学校列表、教务解析、
+            健康检查与版本策略，减少客户端中与学校教务系统强绑定的逻辑。
+          </p>
+        </div>
+        <div class="stack-panel">
+          <div class="stack-item">
+            <span>Client</span>
+            <strong>Flutter / Dart</strong>
+            <p>课程表、设置、导入流程、本地存储</p>
+          </div>
+          <div class="stack-item">
+            <span>Backend</span>
+            <strong>Spring Boot 4 / Java 21</strong>
+            <p>学校配置、教务解析、版本检查、管理页面</p>
+          </div>
+          <div class="stack-item">
+            <span>Data</span>
+            <strong>统一课程 JSON</strong>
+            <p>课程名称、周次、节次、地点、教师、原始时间</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section api-section" id="api">
+        <div class="section-heading">
+          <p class="eyebrow">API</p>
+          <h2>当前服务端入口</h2>
+        </div>
+        <div class="api-grid">
+          <a class="api-row" href="/api/v1/health">
+            <span>GET</span>
+            <strong>/api/v1/health</strong>
+            <em>服务状态</em>
+          </a>
+          <a class="api-row" href="/api/v1/schools">
+            <span>GET</span>
+            <strong>/api/v1/schools</strong>
+            <em>学校列表</em>
+          </a>
+          <a class="api-row" href="/docs/school-importer-development.md">
+            <span>DOC</span>
+            <strong>/docs/school-importer-development.md</strong>
+            <em>学校适配文档</em>
+          </a>
+        </div>
+      </section>
+
+      <section class="cta-section" id="source">
+        <div>
+          <p class="eyebrow">Open Source</p>
+          <h2>把更多学校接入同一个课表体验</h2>
+          <p>新增学校时，只需要按后端学校适配结构实现配置、登录会话解析与课程转换。</p>
+        </div>
+        <a class="primary-action" href="/docs/school-importer-development.md">开始适配</a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Clark AAMS Backend</span>
+      <span>GPL Licensed</span>
+      <a href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
+    </footer>
+
+    <script>
+      const statusBox = document.querySelector("#api-status");
+
+      fetch("/api/v1/health", { cache: "no-store" })
+        .then((response) => response.json())
+        .then((payload) => {
+          const version = payload && payload.data ? payload.data.version : "";
+          statusBox.classList.add("is-up");
+          statusBox.innerHTML = `<span class="status-dot"></span><span>后端在线${version ? ` · v${version}` : ""}</span>`;
+        })
+        .catch(() => {
+          statusBox.classList.add("is-down");
+          statusBox.innerHTML = '<span class="status-dot"></span><span>后端状态暂不可用</span>';
+        });
+    </script>
+  </body>
+</html>

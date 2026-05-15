@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>客户端版本管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --line: #d7deea;
+      --text: #1f2530;
+      --muted: #5f6b7a;
+      --primary: #155eef;
+      --primary-hover: #0f4dd0;
+      --danger: #b42318;
+      --ok: #12754a;
+      --soft: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .bar {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 20px; }
+    h2 { font-size: 16px; }
+    h3 { font-size: 14px; }
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 18px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .panel-title {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-body {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+    form {
+      display: grid;
+      gap: 14px;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    textarea {
+      min-height: 92px;
+      line-height: 1.45;
+      resize: vertical;
+    }
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .grid-three {
+      display: grid;
+      grid-template-columns: 0.8fr 1fr 1.6fr;
+      gap: 10px;
+    }
+    button, a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border-radius: 6px;
+      border: 1px solid var(--primary);
+      padding: 0 12px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover, a.button:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+    button.secondary, a.button.secondary {
+      background: var(--surface);
+      color: var(--primary);
+    }
+    button.secondary:hover, a.button.secondary:hover {
+      background: #eef4ff;
+      color: var(--primary-hover);
+    }
+    button.danger {
+      border-color: #f1b9b4;
+      background: #fff7f6;
+      color: var(--danger);
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .source-list {
+      display: grid;
+      gap: 10px;
+    }
+    .source-section {
+      display: grid;
+      gap: 10px;
+      padding-top: 4px;
+    }
+    .source-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .source-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--soft);
+      display: grid;
+      gap: 10px;
+    }
+    .source-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .check input { width: 16px; height: 16px; }
+    .status {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: var(--soft);
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status.error {
+      border-color: #f1b9b4;
+      background: #fff7f6;
+      color: var(--danger);
+    }
+    .result {
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--soft);
+    }
+    .metric {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+    .metric:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef4ff;
+      color: var(--primary);
+    }
+    .pill.required { background: #fff7f6; color: var(--danger); }
+    .pill.none { background: #edf7f2; color: var(--ok); }
+    code {
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 12px;
+    }
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .bar { align-items: flex-start; flex-direction: column; }
+      .grid-two, .grid-three { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>客户端版本管理</h1>
+    <nav>
+      <a class="button secondary" href="/admin">管理首页</a>
+      <a class="button secondary" href="/admin/schools.html">学校管理</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panel-title">
+      <h2>版本配置</h2>
+      <div class="actions">
+        <button class="secondary" type="button" id="reloadConfig">刷新</button>
+        <button type="submit" form="versionForm">保存</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <form id="versionForm">
+        <div class="grid-two">
+          <label>
+            最新版本号
+            <input name="latestVersion" required placeholder="1.1.0">
+          </label>
+          <label>
+            最新 Build
+            <input name="latestBuild" type="number" min="0" required placeholder="2">
+          </label>
+        </div>
+        <div class="grid-two">
+          <label>
+            最低支持版本号
+            <input name="minimumSupportedVersion" required placeholder="1.0.0">
+          </label>
+          <label>
+            最低支持 Build
+            <input name="minimumSupportedBuild" type="number" min="0" required placeholder="1">
+          </label>
+        </div>
+        <label>
+          更新标题
+          <input name="title" placeholder="发现新版本">
+        </label>
+        <div class="grid-two">
+          <label>
+            可选更新文案
+            <textarea name="optionalUpdateMessage" placeholder="有新版本可用，建议更新后继续使用。"></textarea>
+          </label>
+          <label>
+            强制更新文案
+            <textarea name="requiredUpdateMessage" placeholder="当前版本已停止支持，请更新后继续使用。"></textarea>
+          </label>
+        </div>
+        <label>
+          发布页地址
+          <input name="releasePageUrl" placeholder="https://example.com/releases">
+        </label>
+        <label>
+          发布说明
+          <textarea name="releaseNotes" placeholder="每行一条发布说明"></textarea>
+        </label>
+
+        <section class="source-section">
+          <div class="source-section-title">
+            <h3>下载源</h3>
+            <button class="secondary" type="button" id="addSource">新增下载源</button>
+          </div>
+          <div class="source-list" id="sourceList"></div>
+        </section>
+      </form>
+      <div id="saveStatus" class="status">等待操作</div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-title">
+      <h2>版本校验</h2>
+      <button class="secondary" type="button" id="runCheck">执行</button>
+    </div>
+    <div class="panel-body">
+      <div class="grid-two">
+        <label>
+          平台
+          <input name="platform" form="checkForm" placeholder="android" value="android">
+        </label>
+        <label>
+          渠道
+          <input name="channel" form="checkForm" placeholder="stable" value="stable">
+        </label>
+      </div>
+      <form id="checkForm">
+        <div class="grid-two">
+          <label>
+            当前版本号
+            <input name="currentVersion" required placeholder="1.0.0" value="1.0.0">
+          </label>
+          <label>
+            当前 Build
+            <input name="currentBuild" type="number" min="0" placeholder="1" value="1">
+          </label>
+        </div>
+      </form>
+      <div id="checkResult" class="result">
+        <div class="metric"><span>更新类型</span><span class="pill none">未执行</span></div>
+      </div>
+      <div id="checkStatus" class="status">等待校验</div>
+    </div>
+  </aside>
+</main>
+
+<script>
+  const versionForm = document.querySelector('#versionForm');
+  const checkForm = document.querySelector('#checkForm');
+  const sourceList = document.querySelector('#sourceList');
+  const saveStatus = document.querySelector('#saveStatus');
+  const checkStatus = document.querySelector('#checkStatus');
+  const checkResult = document.querySelector('#checkResult');
+  let sources = [];
+
+  document.querySelector('#reloadConfig').addEventListener('click', loadConfig);
+  document.querySelector('#addSource').addEventListener('click', () => {
+    sources.push({type: '', label: '', url: '', primary: sources.length === 0, description: ''});
+    renderSources();
+  });
+  document.querySelector('#runCheck').addEventListener('click', runCheck);
+  versionForm.addEventListener('submit', saveConfig);
+  checkForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    runCheck();
+  });
+
+  async function loadConfig() {
+    setStatus(saveStatus, '正在加载');
+    try {
+      const response = await fetch('/api/v1/admin/app-version/config');
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      fillForm(result.data);
+      setStatus(saveStatus, '已加载');
+    } catch (error) {
+      setStatus(saveStatus, error.message, true);
+    }
+  }
+
+  async function saveConfig(event) {
+    event.preventDefault();
+    setStatus(saveStatus, '正在保存');
+    try {
+      const payload = readForm();
+      const response = await fetch('/api/v1/admin/app-version/config', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      fillForm(result.data);
+      setStatus(saveStatus, '已保存');
+    } catch (error) {
+      setStatus(saveStatus, error.message, true);
+    }
+  }
+
+  async function runCheck() {
+    setStatus(checkStatus, '正在校验');
+    const data = new FormData(checkForm);
+    const buildValue = data.get('currentBuild');
+    const payload = {
+      platform: data.get('platform') || 'android',
+      channel: data.get('channel') || 'stable',
+      currentVersion: data.get('currentVersion'),
+      currentBuild: buildValue === '' ? null : Number(buildValue)
+    };
+    try {
+      const response = await fetch('/api/v1/app/version/check', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json();
+      if (!response.ok || result.code !== 0) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      renderResult(result.data);
+      setStatus(checkStatus, '校验完成');
+    } catch (error) {
+      setStatus(checkStatus, error.message, true);
+    }
+  }
+
+  function fillForm(config) {
+    versionForm.latestVersion.value = config.latestVersion || '';
+    versionForm.latestBuild.value = config.latestBuild ?? 0;
+    versionForm.minimumSupportedVersion.value = config.minimumSupportedVersion || '';
+    versionForm.minimumSupportedBuild.value = config.minimumSupportedBuild ?? 0;
+    versionForm.title.value = config.title || '';
+    versionForm.optionalUpdateMessage.value = config.optionalUpdateMessage || '';
+    versionForm.requiredUpdateMessage.value = config.requiredUpdateMessage || '';
+    versionForm.releasePageUrl.value = config.releasePageUrl || '';
+    versionForm.releaseNotes.value = (config.releaseNotes || []).join('\n');
+    sources = (config.downloadSources || []).map((source) => ({...source}));
+    renderSources();
+  }
+
+  function readForm() {
+    return {
+      latestVersion: versionForm.latestVersion.value,
+      latestBuild: Number(versionForm.latestBuild.value),
+      minimumSupportedVersion: versionForm.minimumSupportedVersion.value,
+      minimumSupportedBuild: Number(versionForm.minimumSupportedBuild.value),
+      title: versionForm.title.value,
+      optionalUpdateMessage: versionForm.optionalUpdateMessage.value,
+      requiredUpdateMessage: versionForm.requiredUpdateMessage.value,
+      releasePageUrl: versionForm.releasePageUrl.value,
+      releaseNotes: versionForm.releaseNotes.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean),
+      downloadSources: sources.map((source, index) => ({
+        type: source.type,
+        label: source.label,
+        url: source.url,
+        primary: source.primary || (index === 0 && !sources.some((item) => item.primary)),
+        description: source.description
+      }))
+    };
+  }
+
+  function renderSources() {
+    if (sources.length === 0) {
+      sourceList.innerHTML = '<div class="status">暂无下载源</div>';
+      return;
+    }
+    sourceList.innerHTML = sources.map((source, index) => `
+      <div class="source-row" data-index="${index}">
+        <div class="source-head">
+          <strong>下载源 ${index + 1}</strong>
+          <button class="danger" type="button" data-action="remove">删除</button>
+        </div>
+        <div class="grid-three">
+          <label>类型<input data-field="type" value="${escapeAttr(source.type)}" placeholder="gitee"></label>
+          <label>名称<input data-field="label" value="${escapeAttr(source.label)}" placeholder="Gitee 下载"></label>
+          <label>地址<input data-field="url" value="${escapeAttr(source.url)}" placeholder="https://example.com"></label>
+        </div>
+        <label>说明<input data-field="description" value="${escapeAttr(source.description)}" placeholder="推荐国内网络使用"></label>
+        <label class="check"><input type="checkbox" data-field="primary" ${source.primary ? 'checked' : ''}>主下载源</label>
+      </div>
+    `).join('');
+
+    sourceList.querySelectorAll('.source-row').forEach((row) => {
+      const index = Number(row.dataset.index);
+      row.querySelector('[data-action="remove"]').addEventListener('click', () => {
+        sources.splice(index, 1);
+        renderSources();
+      });
+      row.querySelectorAll('[data-field]').forEach((input) => {
+        input.addEventListener('input', () => syncSource(index, input));
+        input.addEventListener('change', () => syncSource(index, input));
+      });
+    });
+  }
+
+  function syncSource(index, input) {
+    const field = input.dataset.field;
+    if (field === 'primary') {
+      sources[index][field] = input.checked;
+      if (input.checked) {
+        sources = sources.map((source, sourceIndex) => ({...source, primary: sourceIndex === index}));
+        renderSources();
+      }
+      return;
+    }
+    sources[index][field] = input.value;
+  }
+
+  function renderResult(data) {
+    const typeClass = data.updateType === 'required' ? 'required' : data.updateType === 'none' ? 'none' : '';
+    checkResult.innerHTML = `
+      <div class="metric"><span>更新类型</span><span class="pill ${typeClass}">${escapeHtml(data.updateType)}</span></div>
+      <div class="metric"><span>当前版本</span><code>${escapeHtml(data.currentVersion || '')} (${escapeHtml(data.currentBuild ?? '')})</code></div>
+      <div class="metric"><span>最新版本</span><code>${escapeHtml(data.latestVersion)} (${escapeHtml(data.latestBuild)})</code></div>
+      <div class="metric"><span>最低支持</span><code>${escapeHtml(data.minimumSupportedVersion)} (${escapeHtml(data.minimumSupportedBuild)})</code></div>
+      <div class="metric"><span>强制更新</span><span>${data.forceUpdate ? '是' : '否'}</span></div>
+      <div><strong>${escapeHtml(data.title || '')}</strong></div>
+      <div>${escapeHtml(data.message || '')}</div>
+    `;
+  }
+
+  function setStatus(element, message, error = false) {
+    element.textContent = message;
+    element.classList.toggle('error', error);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replaceAll('`', '&#096;');
+  }
+
+  loadConfig();
+</script>
+</body>
+</html>
