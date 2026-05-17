@@ -20,6 +20,7 @@
         <img src="/site/logo.png" alt="" />
         <span>Clark AAMS</span>
       </a>
+      <a class="guide-menu-button" href="/docs/user-guide/intro.html">用户指南</a>
       <div class="home-menu">
         <button class="home-menu-button" id="home-menu-button" type="button" aria-expanded="false" aria-controls="home-menu-panel" aria-label="打开导航">
           <span></span>
@@ -139,6 +140,12 @@
 
       menuPanel.inert = true;
 
+      function closeHomeMenu() {
+        menuButton.setAttribute("aria-expanded", "false");
+        menuPanel.setAttribute("aria-hidden", "true");
+        menuPanel.inert = true;
+      }
+
       function setUserEntryTarget(target) {
         userEntryTarget = target;
         userEntries.forEach((entry) => {
@@ -170,9 +177,7 @@
 
       document.addEventListener("click", (event) => {
         if (!event.target.closest(".home-menu")) {
-          menuButton.setAttribute("aria-expanded", "false");
-          menuPanel.setAttribute("aria-hidden", "true");
-          menuPanel.inert = true;
+          closeHomeMenu();
         }
       });
 

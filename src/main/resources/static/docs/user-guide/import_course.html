@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>用户指南 - 课程导入 | Clark AAMS</title>
+    <link rel="icon" href="/site/favicon.ico" />
+    <link rel="stylesheet" href="/site/styles.css" />
+  </head>
+  <body class="guide-page">
+    <header class="guide-header">
+      <a class="brand guide-brand" href="/"><img src="/site/logo.png" alt="" /><span>Clark AAMS</span></a>
+      <a class="guide-home-link" href="/">返回主页</a>
+    </header>
+    <main class="guide-layout">
+      <aside class="guide-sidebar">
+        <input class="guide-search" type="search" placeholder="输入并搜索" aria-label="搜索用户指南" />
+        <nav class="guide-nav" aria-label="用户指南目录">
+          <a href="/docs/user-guide/intro.html">应用定位</a>
+          <a href="/docs/user-guide/first_use.html">首次使用</a>
+          <a class="child" href="/docs/user-guide/first_use.html#%E9%80%89%E6%8B%A9%E5%AD%A6%E6%A0%A1">选择学校</a>
+          <a class="child" href="/docs/user-guide/first_use.html#%E4%BD%BF%E7%94%A8%E5%85%B6%E4%BB%96%E6%96%B9%E5%BC%8F%E5%AF%BC%E5%85%A5">使用其他方式导入</a>
+          <a href="/docs/user-guide/main_interface.html">主界面</a>
+          <a class="child" href="/docs/user-guide/main_interface.html#%E9%A6%96%E9%A1%B5">首页</a>
+          <a class="child" href="/docs/user-guide/main_interface.html#%E8%AF%BE%E7%A8%8B%E8%A1%A8">课程表</a>
+          <a class="active" href="/docs/user-guide/import_course.html">课程导入</a>
+          <a class="child" href="/docs/user-guide/import_course.html#OCR%E5%9B%BE%E7%89%87%E8%AF%86%E5%88%AB%E5%AF%BC%E5%85%A5">OCR 图片识别导入</a>
+          <a class="child" href="/docs/user-guide/import_course.html#%E5%8F%96%E4%BB%B6%E7%A0%81%E5%AF%BC%E5%85%A5">取件码导入</a>
+          <a class="child" href="/docs/user-guide/import_course.html#%E6%95%99%E5%8A%A1%E7%B3%BB%E7%BB%9F%E5%AF%BC%E5%85%A5">教务系统导入</a>
+          <a class="child" href="/docs/user-guide/import_course.html#JSON%E6%89%B9%E9%87%8F%E5%AF%BC%E5%85%A5">JSON 批量导入</a>
+          <a href="/docs/user-guide/add_course.html">课程管理</a>
+          <a class="child" href="/docs/user-guide/add_course.html#%E6%89%8B%E5%8A%A8%E6%B7%BB%E5%8A%A0%E8%AF%BE%E7%A8%8B">手动添加课程</a>
+          <a class="child" href="/docs/user-guide/add_course.html#%E7%BC%96%E8%BE%91%E8%AF%BE%E7%A8%8B">编辑课程</a>
+          <a class="child" href="/docs/user-guide/add_course.html#%E5%88%A0%E9%99%A4%E8%AF%BE%E7%A8%8B">删除课程</a>
+          <a class="child" href="/docs/user-guide/add_course.html#%E8%AF%BE%E7%A8%8B%E9%A2%9C%E8%89%B2">课程颜色</a>
+          <a href="/docs/user-guide/semester_time.html">学期与节次时间</a>
+          <a href="/docs/user-guide/app_settings.html">应用设置</a>
+          <a href="/docs/user-guide/widgets.html">桌面小组件与系统卡片</a>
+          <a class="child" href="/docs/user-guide/widgets.html#%E6%94%AF%E6%8C%81%E7%9A%84%E5%B0%8F%E7%BB%84%E4%BB%B6%E5%B0%BA%E5%AF%B8">支持的小组件尺寸</a>
+          <a class="child" href="/docs/user-guide/widgets.html#2x2%E5%B0%8F%E7%BB%84%E4%BB%B6%E6%98%BE%E7%A4%BA%E5%86%85%E5%AE%B9">2x2 小组件显示内容</a>
+          <a class="child" href="/docs/user-guide/widgets.html#4x2%E5%B0%8F%E7%BB%84%E4%BB%B6%E6%98%BE%E7%A4%BA%E5%86%85%E5%AE%B9">4x2 小组件显示内容</a>
+          <div class="guide-nav-collection" data-guide-collection data-guide-hash="#不同系统添加方式">
+            <button class="guide-nav-collection-toggle" type="button" aria-expanded="false">不同系统添加方式</button>
+            <div class="guide-nav-collection-items">
+              <a class="grandchild" href="/docs/user-guide/widgets.html#ColorOS">ColorOS</a>
+            </div>
+          </div>
+          <a href="/docs/user-guide/profile.html">我的页面</a>
+          <a href="/docs/user-guide/account.html">账号功能</a>
+          <a href="/docs/user-guide/xuexitong.html">学习通作业辅助</a>
+          <a href="/docs/user-guide/about_updates.html">关于与版本更新</a>
+          <a href="/docs/user-guide/data_network.html">数据保存与网络说明</a>
+          <a href="/docs/user-guide/faq.html">常见问题</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%A6%96%E9%A1%B5%E5%91%A8%E6%AC%A1%E4%B8%8D%E5%AF%B9%EF%BC%9F">为什么首页周次不对？</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%A1%8C%E9%9D%A2%E5%B0%8F%E7%BB%84%E4%BB%B6%E6%8F%90%E7%A4%BA%E5%85%88%E9%85%8D%E7%BD%AE%E4%B8%8A%E8%AF%BE%E6%97%B6%E9%97%B4%EF%BC%9F">为什么桌面小组件提示先配置上课时间？</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BB%8A%E5%A4%A9%E6%98%8E%E6%98%8E%E6%9C%89%E8%AF%BE%EF%BC%8C%E5%B0%8F%E7%BB%84%E4%BB%B6%E6%98%BE%E7%A4%BA%E6%B2%A1%E6%9C%89%E8%AF%BE%E7%A8%8B%EF%BC%9F">为什么今天明明有课，小组件显示没有课程？</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E4%B8%BA%E4%BB%80%E4%B9%88ColorOS%E9%87%8C%E5%8F%AB%E2%80%9C%E5%8D%A1%E7%89%87%E2%80%9D%E8%80%8C%E4%B8%8D%E6%98%AF%E2%80%9C%E5%B0%8F%E7%BB%84%E4%BB%B6%E2%80%9D%EF%BC%9F">为什么 ColorOS 里叫“卡片”而不是“小组件”？</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E9%87%8D%E6%96%B0%E9%80%89%E6%8B%A9%E5%AD%A6%E6%A0%A1%E4%BC%9A%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88%EF%BC%9F">重新选择学校会发生什么？</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E4%B8%8D%E7%99%BB%E5%BD%95%E8%B4%A6%E5%8F%B7%E8%83%BD%E7%94%A8%E8%AF%BE%E8%A1%A8%E5%90%97%EF%BC%9F">不登录账号能用课表吗？</a>
+          <a class="child" href="/docs/user-guide/faq.html#%E6%95%99%E5%8A%A1%E7%B3%BB%E7%BB%9F%E5%AF%BC%E5%85%A5%E5%A4%B1%E8%B4%A5%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F">教务系统导入失败怎么办？</a>
+          <a class="child" href="/docs/user-guide/faq.html#OCR%E8%AF%86%E5%88%AB%E4%B8%8D%E5%87%86%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F">OCR 识别不准怎么办？</a>
+          <a href="/docs/user-guide/feature_list.html">功能清单</a>
+        </nav>
+      </aside>
+      <article class="guide-article" aria-label="用户指南内容">
+        <header>
+          <h1>课程导入</h1>
+        </header>
+          <p>课程导入入口位于“我的”里的“课程设置”，点击右上角菜单后选择“导入课程”。</p>
+        <section id="OCR图片识别导入">
+          <h2>OCR 图片识别导入</h2>
+          <p>OCR 导入用于从课表图片中识别课程。</p>
+          <p>使用流程：</p>
+          <ol>
+            <li>在课程设置页打开“导入课程”。</li>
+            <li>选择“使用 OCR 导入”。</li>
+            <li>从相册中选择一张或多张课表图片。</li>
+            <li>应用上传图片到后端识别。</li>
+            <li>识别完成后会生成取件码。</li>
+            <li>用户可以复制取件码，也可以继续导入识别出的课程。</li>
+            <li>导入前需要设置第一周第一天和每节课开始时间。</li>
+            <li>设置课程颜色后确认导入。</li>
+          </ol>
+          <p>注意事项：</p>
+          <ul>
+            <li>OCR 功能需要网络连接和后端服务可用。</li>
+            <li>识别结果依赖图片清晰度和课表格式。</li>
+            <li>取件码可用于在其他设备或稍后重新获取识别结果。</li>
+          </ul>
+        </section>
+        <section id="取件码导入">
+          <h2>取件码导入</h2>
+          <p>取件码导入用于通过 8 位取件码获取已识别的课程数据。</p>
+          <p>使用流程：</p>
+          <ol>
+            <li>在课程设置页打开“导入课程”。</li>
+            <li>选择“使用取件码导入”。</li>
+            <li>输入 8 位取件码。</li>
+            <li>应用从后端读取对应课程。</li>
+            <li>配置第一周第一天和每节课开始时间。</li>
+            <li>设置课程颜色后确认导入。</li>
+          </ol>
+        </section>
+        <section id="教务系统导入">
+          <h2>教务系统导入</h2>
+          <p>教务系统导入用于从学校教务系统读取课表。该功能只对已配置教务导入能力的学校开放。</p>
+          <p>使用流程：</p>
+          <ol>
+            <li>首次使用时选择支持教务导入的学校。</li>
+            <li>在课程设置页打开“导入课程”。</li>
+            <li>选择“教务系统导入”。</li>
+            <li>应用打开学校教务系统登录页。</li>
+            <li>用户在 WebView 中自行登录教务系统。</li>
+            <li>应用检测到登录成功后读取登录会话信息。</li>
+            <li>后端根据学校适配规则拉取并解析课程。</li>
+            <li>用户配置第一周第一天和每节课开始时间。</li>
+            <li>设置课程颜色后确认导入。</li>
+          </ol>
+          <p>注意事项：</p>
+          <ul>
+            <li>教务系统导入需要学校配置支持。</li>
+            <li>登录过程在学校教务系统页面完成。</li>
+            <li>如果学校登录页、成功跳转规则或教务接口变化，可能需要更新后端适配。</li>
+          </ul>
+        </section>
+        <section id="JSON批量导入">
+          <h2>JSON 批量导入</h2>
+          <p>JSON 批量导入用于粘贴课程数组并一次性添加多门课程。</p>
+          <p>入口：课程设置页右上角菜单，选择“批量添加”。</p>
+          <p>支持字段包括：</p>
+          <div class="guide-table-wrap">
+            <table class="guide-table">
+              <thead>
+                <tr>
+                  <th>字段</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>name</code></td>
+                  <td>课程名称</td>
+                </tr>
+                <tr>
+                  <td><code>startWeek</code></td>
+                  <td>开始周</td>
+                </tr>
+                <tr>
+                  <td><code>endWeek</code></td>
+                  <td>结束周</td>
+                </tr>
+                <tr>
+                  <td><code>dayOfWeek</code></td>
+                  <td>星期，1 到 7 分别表示周一到周日</td>
+                </tr>
+                <tr>
+                  <td><code>startLesson</code></td>
+                  <td>开始节次</td>
+                </tr>
+                <tr>
+                  <td><code>endLesson</code></td>
+                  <td>结束节次</td>
+                </tr>
+                <tr>
+                  <td><code>location</code></td>
+                  <td>上课地点</td>
+                </tr>
+                <tr>
+                  <td><code>teacher</code></td>
+                  <td>教师，选填</td>
+                </tr>
+                <tr>
+                  <td><code>rawTime</code></td>
+                  <td>原始时间文本，选填</td>
+                </tr>
+                <tr>
+                  <td><code>weeks</code></td>
+                  <td>精确上课周，选填，用于单双周或不连续周次</td>
+                </tr>
+                <tr>
+                  <td><code>colorValue</code></td>
+                  <td>课程颜色 ARGB 整数，选填</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>示例：</p>
+          <pre><code>[
+  {
+    &quot;name&quot;: &quot;高等数学&quot;,
+    &quot;startWeek&quot;: 1,
+    &quot;endWeek&quot;: 18,
+    &quot;dayOfWeek&quot;: 1,
+    &quot;startLesson&quot;: 1,
+    &quot;endLesson&quot;: 2,
+    &quot;location&quot;: &quot;A101&quot;,
+    &quot;teacher&quot;: &quot;张三&quot;,
+    &quot;weeks&quot;: [1, 2, 3, 4]
+  }
+]</code></pre>
+          <p>批量添加窗口还支持“导出 JSON”，会把当前课程以应用可重新导入的 JSON 格式复制到剪贴板。</p>
+        </section>
+      </article>
+    </main>
+    <script>
+      const guideSearch = document.querySelector(".guide-search");
+      const guideSidebar = document.querySelector(".guide-sidebar");
+      const guideLinks = Array.from(document.querySelectorAll(".guide-nav a"));
+      const guideCollections = Array.from(document.querySelectorAll(".guide-nav-collection"));
+      const guideSections = Array.from(document.querySelectorAll(".guide-article section[id]"));
+      let scrollTicking = false;
+
+      function linkFor(hash) {
+        const currentFile = location.pathname.split("/").pop();
+        return guideLinks.find((link) => {
+          const url = new URL(link.href, location.origin);
+          return url.pathname.endsWith("/" + currentFile) && decodeURIComponent(url.hash) === hash;
+        });
+      }
+
+      function collectionFor(hash, activeLink) {
+        return guideCollections.find((collection) => {
+          if (collection.dataset.guideHash === hash) return true;
+          return activeLink && collection.contains(activeLink);
+        });
+      }
+
+      function pageLink() {
+        const currentFile = location.pathname.split("/").pop();
+        return guideLinks.find((link) => {
+          const url = new URL(link.href, location.origin);
+          return url.pathname.endsWith("/" + currentFile) && !url.hash;
+        });
+      }
+
+      function revealInSidebar(element) {
+        if (!guideSidebar || !element) return;
+        const sidebarRect = guideSidebar.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        if (elementRect.top < sidebarRect.top + 12) {
+          guideSidebar.scrollTop -= sidebarRect.top + 12 - elementRect.top;
+        } else if (elementRect.bottom > sidebarRect.bottom - 12) {
+          guideSidebar.scrollTop += elementRect.bottom - sidebarRect.bottom + 12;
+        }
+      }
+
+      function setCollectionOpen(collection, open) {
+        if (!collection) return;
+        collection.classList.toggle("open", open);
+        const toggle = collection.querySelector(".guide-nav-collection-toggle");
+        if (toggle) toggle.setAttribute("aria-expanded", String(open));
+      }
+
+      function setActiveGuideLink(activeLink, activeCollection = null, reveal = false) {
+        guideLinks.forEach((link) => link.classList.toggle("active", link === activeLink));
+        guideCollections.forEach((collection) => {
+          const containsActiveLink = Boolean(activeLink && collection.contains(activeLink));
+          const isActiveCollection = collection === activeCollection;
+          const shouldOpen = containsActiveLink || isActiveCollection || collection.classList.contains("user-open");
+          setCollectionOpen(collection, shouldOpen);
+          const toggle = collection.querySelector(".guide-nav-collection-toggle");
+          if (toggle) toggle.classList.toggle("active", containsActiveLink || isActiveCollection);
+        });
+        if (reveal) {
+          revealInSidebar(activeLink || activeCollection?.querySelector(".guide-nav-collection-toggle"));
+        }
+      }
+
+      function updateActiveGuideLink(reveal = true) {
+        const hash = decodeURIComponent(location.hash);
+        const activeLink = linkFor(hash) || pageLink();
+        setActiveGuideLink(activeLink, collectionFor(hash, activeLink), reveal);
+      }
+
+      function updateActiveGuideLinkByScroll() {
+        if (!guideSections.length) {
+          setActiveGuideLink(pageLink());
+          return;
+        }
+        let currentSection = null;
+        for (const section of guideSections) {
+          if (section.getBoundingClientRect().top <= 130) {
+            currentSection = section;
+          }
+        }
+        if (!currentSection) {
+          setActiveGuideLink(pageLink());
+          return;
+        }
+        const hash = "#" + currentSection.id;
+        const activeLink = linkFor(hash);
+        setActiveGuideLink(activeLink, collectionFor(hash, activeLink));
+      }
+
+      guideCollections.forEach((collection) => {
+        const toggle = collection.querySelector(".guide-nav-collection-toggle");
+        if (!toggle) return;
+        toggle.addEventListener("click", () => {
+          const shouldOpen = !collection.classList.contains("open");
+          collection.classList.toggle("user-open", shouldOpen);
+          setCollectionOpen(collection, shouldOpen);
+        });
+      });
+      guideSearch.addEventListener("input", () => {
+        const keyword = guideSearch.value.trim().toLowerCase();
+        guideLinks.forEach((link) => {
+          link.hidden = keyword !== "" && !link.textContent.trim().toLowerCase().includes(keyword);
+        });
+        guideCollections.forEach((collection) => {
+          const text = collection.textContent.trim().toLowerCase();
+          const matched = keyword === "" || text.includes(keyword);
+          collection.hidden = !matched;
+          if (keyword !== "" && matched) {
+            setCollectionOpen(collection, true);
+            collection.querySelectorAll("a").forEach((link) => {
+              link.hidden = false;
+            });
+          }
+        });
+      });
+      window.addEventListener("hashchange", () => updateActiveGuideLink(true));
+      window.addEventListener("scroll", () => {
+        if (scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+          updateActiveGuideLinkByScroll();
+          scrollTicking = false;
+        });
+      }, { passive: true });
+      updateActiveGuideLink(location.hash !== "");
+    </script>
+  </body>
+</html>

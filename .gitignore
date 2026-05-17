@@ -1,6 +1,7 @@
 HELP.md
 .gradle
 build/
+realse/
 client-version.json
 ai-config.json
 admin-config.json
