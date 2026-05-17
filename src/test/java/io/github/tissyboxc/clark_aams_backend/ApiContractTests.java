@@ -1,21 +1,27 @@
 package io.github.tissyboxc.clark_aams_backend;
 
+import io.github.tissyboxc.clark_aams_backend.ai.QuestionAnalysisService;
 import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupRecordDto;
 import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.hasSize;
@@ -31,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "clark-aams.client-version.config-path=${java.io.tmpdir}/clark-aams-backend-test-client-version.json",
         "clark-aams.pickup.storage-dir=${java.io.tmpdir}/clark-aams-backend-test-pickups",
+        "clark-aams.user.db-path=${java.io.tmpdir}/clark-aams-backend-test-users.db",
         "clark-aams.admin.username=test-admin",
         "clark-aams.admin.password=test-password"
 })
@@ -51,7 +58,36 @@ class ApiContractTests {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data[0].id").value("jit"))
                 .andExpect(jsonPath("$.data[0].name").value("金陵科技学院"))
+                .andExpect(jsonPath("$.data[0].lessonTimeProfile").value("general-a"))
                 .andExpect(jsonPath("$.data[0].capabilities.academicImport").value(true));
+    }
+
+    @Test
+    void schoolLessonTimesReturnsThirteenLessons() throws Exception {
+        mockMvc.perform(get("/api/v1/schools/jit/lesson-times"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.schoolId").value("jit"))
+                .andExpect(jsonPath("$.data.profile").value("general-a"))
+                .andExpect(jsonPath("$.data.lessons", hasSize(13)))
+                .andExpect(jsonPath("$.data.lessons[0].lesson").value(1))
+                .andExpect(jsonPath("$.data.lessons[0].startTime").value("08:30"))
+                .andExpect(jsonPath("$.data.lessons[0].endTime").doesNotExist())
+                .andExpect(jsonPath("$.data.lessons[7].startTime").value("16:15"))
+                .andExpect(jsonPath("$.data.lessons[12].lesson").value(13));
+    }
+
+    @Test
+    void lessonTimeProfilesReturnGeneralProfilesWithoutSchool() throws Exception {
+        mockMvc.perform(get("/api/v1/schools/lesson-time-profiles"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].profile").value("general-a"))
+                .andExpect(jsonPath("$.data[0].lessons", hasSize(13)))
+                .andExpect(jsonPath("$.data[0].lessons[0].startTime").value("08:30"))
+                .andExpect(jsonPath("$.data[1].profile").value("general-b"))
+                .andExpect(jsonPath("$.data[1].lessons[0].startTime").value("08:00"));
     }
 
     @Test
@@ -63,9 +99,113 @@ class ApiContractTests {
     }
 
     @Test
+    void questionAnalysisRequiresUserLogin() throws Exception {
+        mockMvc.perform(post("/api/v1/questions/analyze")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "question_type": "single_choice",
+                                  "question_content": "Pick one",
+                                  "options": ["A. one", "B. two"]
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(40101));
+    }
+
+    @Test
+    void questionAnalysisRejectsMissingQuestionContent() throws Exception {
+        MockHttpSession session = registerAsUser();
+
+        mockMvc.perform(post("/api/v1/questions/analyze")
+                        .session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "question_type": "single_choice",
+                                  "options": ["A. one", "B. two"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(40001));
+    }
+
+    @Test
+    void questionAnalysisRestoresSessionFromLoginCodeHeader() throws Exception {
+        RegisteredUser user = registerUser();
+
+        MvcResult result = mockMvc.perform(post("/api/v1/questions/analyze")
+                        .header("X-Clark-Aams-Login-Code", user.loginCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "question_type": "single_choice",
+                                  "question_content": "Pick one",
+                                  "options": ["A. one", "B. two"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.answer").value("A"))
+                .andReturn();
+
+        MockHttpSession restoredSession = (MockHttpSession) result.getRequest().getSession(false);
+        assertTrue(restoredSession != null);
+
+        mockMvc.perform(get("/api/v1/user/me").session(restoredSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.email").value(user.email()))
+                .andExpect(jsonPath("$.data.questionAnalysisCount").value(1));
+    }
+
+    @Test
+    void userLoginSupportsEmailAndLoginCode() throws Exception {
+        RegisteredUser user = registerUser();
+
+        mockMvc.perform(post("/api/v1/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "qqEmail": "%s",
+                                  "password": "%s"
+                                }
+                                """.formatted(user.email(), user.password())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.email").value(user.email()))
+                .andExpect(jsonPath("$.data.questionAnalysisCount").value(0));
+
+        mockMvc.perform(post("/api/v1/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "loginCode": "%s"
+                                }
+                                """.formatted(user.loginCode())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.email").value(user.email()))
+                .andExpect(jsonPath("$.data.questionAnalysisCount").value(0));
+    }
+
+    @Test
     void faviconIsServedAsStaticResource() throws Exception {
         mockMvc.perform(get("/favicon.ico"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void serviceWorkerCleanupIsServedAsStaticResource() throws Exception {
+        mockMvc.perform(get("/sw.js"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void userEntryRedirectsToUserPage() throws Exception {
+        mockMvc.perform(get("/user"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/user/index.html"));
     }
 
     @Test
@@ -304,5 +444,63 @@ class ApiContractTests {
                 .andExpect(jsonPath("$.code").value(0))
                 .andReturn();
         return (MockHttpSession) result.getRequest().getSession(false);
+    }
+
+    private MockHttpSession registerAsUser() throws Exception {
+        return registerUser().session();
+    }
+
+    private RegisteredUser registerUser() throws Exception {
+        String email = "test-" + UUID.randomUUID() + "@qq.com";
+        String password = "test-password";
+        MvcResult result = mockMvc.perform(post("/api/v1/user/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "test-user",
+                                  "password": "%s",
+                                  "qqEmail": "%s"
+                                }
+                                """.formatted(password, email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.questionAnalysisCount").value(0))
+                .andReturn();
+        String loginCode = objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("data")
+                .get("loginCode")
+                .asText();
+        return new RegisteredUser(email, password, loginCode, (MockHttpSession) result.getRequest().getSession(false));
+    }
+
+    private record RegisteredUser(String email, String password, String loginCode, MockHttpSession session) {
+    }
+
+    @TestConfiguration
+    static class QuestionAnalysisTestConfig {
+        @Bean
+        @Primary
+        QuestionAnalysisService questionAnalysisService(
+                io.github.tissyboxc.clark_aams_backend.ai.AiConfigStore configStore,
+                ObjectMapper objectMapper) {
+            return new QuestionAnalysisService(configStore, objectMapper) {
+                @Override
+                public Map<String, Object> analyze(Map<String, Object> request) {
+                    Object questionContent = request.get("question_content");
+                    Object options = request.get("options");
+                    if (questionContent == null || String.valueOf(questionContent).isBlank()) {
+                        throw new io.github.tissyboxc.clark_aams_backend.common.BusinessException(
+                                io.github.tissyboxc.clark_aams_backend.common.ErrorCode.BAD_REQUEST,
+                                "question_content is required");
+                    }
+                    if (options == null) {
+                        throw new io.github.tissyboxc.clark_aams_backend.common.BusinessException(
+                                io.github.tissyboxc.clark_aams_backend.common.ErrorCode.BAD_REQUEST,
+                                "options is required");
+                    }
+                    return Map.of("answer", "A");
+                }
+            };
+        }
     }
 }

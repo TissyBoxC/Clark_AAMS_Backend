@@ -7,6 +7,7 @@ public record SchoolDto(
         boolean enabled,
         SchoolCapabilityDto capabilities,
         SchoolLoginDto login,
+        String lessonTimeProfile,
         int version
 ) {
 }

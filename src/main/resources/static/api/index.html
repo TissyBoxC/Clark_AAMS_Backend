@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Clark AAMS 后端接口入口与开发文档。" />
+    <title>接口 | Clark AAMS</title>
+    <link rel="icon" href="/site/favicon.ico" />
+    <link rel="icon" href="/site/logo.png" />
+    <link rel="stylesheet" href="/site/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Clark AAMS 首页">
+        <img src="/site/logo.png" alt="" />
+        <span>Clark AAMS</span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="/">主页</a>
+        <a href="/#platform">架构</a>
+        <a href="/#source">开源</a>
+        <a href="/user/index.html#recognize">识别</a>
+        <a class="active" href="/api/index.html">接口</a>
+        <a href="/user/index.html">用户</a>
+      </nav>
+      <a class="github-link" href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow">API</p>
+        <h1>服务端接口</h1>
+        <p class="hero-text">
+          当前后端对客户端开放学校、教务导入、版本检查、课程图片识别和题目解析接口。
+          管理接口需要管理员登录后使用。
+        </p>
+      </section>
+
+      <section class="section api-section">
+        <div class="section-heading">
+          <p class="eyebrow">Public Endpoints</p>
+          <h2>客户端与调试入口</h2>
+        </div>
+        <div class="api-grid">
+          <a class="api-row" href="/api/v1/health">
+            <span>GET</span>
+            <strong>/api/v1/health</strong>
+            <em>服务状态</em>
+          </a>
+          <a class="api-row" href="/api/v1/schools">
+            <span>GET</span>
+            <strong>/api/v1/schools</strong>
+            <em>学校列表</em>
+          </a>
+          <a class="api-row" href="/api/v1/schools/jit">
+            <span>GET</span>
+            <strong>/api/v1/schools/{schoolId}</strong>
+            <em>学校详情</em>
+          </a>
+          <a class="api-row" href="/api/v1/schools/jit/lesson-times">
+            <span>GET</span>
+            <strong>/api/v1/schools/{schoolId}/lesson-times</strong>
+            <em>学校节次时间</em>
+          </a>
+          <a class="api-row" href="/api/v1/schools/lesson-time-profiles">
+            <span>GET</span>
+            <strong>/api/v1/schools/lesson-time-profiles</strong>
+            <em>通用节次时间</em>
+          </a>
+          <div class="api-row">
+            <span>POST</span>
+            <strong>/api/v1/imports/{schoolId}/courses</strong>
+            <em>教务课程导入</em>
+          </div>
+          <a class="api-row" href="/api/v1/app/version?platform=android&amp;currentVersion=1.0.0&amp;currentBuild=1">
+            <span>GET</span>
+            <strong>/api/v1/app/version</strong>
+            <em>版本检查</em>
+          </a>
+          <div class="api-row">
+            <span>POST</span>
+            <strong>/api/v1/app/version/check</strong>
+            <em>版本检查</em>
+          </div>
+          <a class="api-row" href="/user/index.html#recognize">
+            <span>POST</span>
+            <strong>/api/v1/course-pickups</strong>
+            <em>图片识别并生成取件码</em>
+          </a>
+          <div class="api-row">
+            <span>GET</span>
+            <strong>/api/v1/course-pickups/{code}</strong>
+            <em>按取件码取回 JSON</em>
+          </div>
+          <div class="api-row">
+            <span>POST</span>
+            <strong>/api/v1/courses/recognize</strong>
+            <em>直接识别课程图片</em>
+          </div>
+          <div class="api-row">
+            <span>POST</span>
+            <strong>/api/v1/questions/analyze</strong>
+            <em>题目解析</em>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Docs</p>
+          <h2>开发文档</h2>
+        </div>
+        <div class="api-grid">
+          <a class="api-row" href="/docs/flutter-backend-integration.md">
+            <span>DOC</span>
+            <strong>flutter-backend-integration.md</strong>
+            <em>客户端接入</em>
+          </a>
+          <a class="api-row" href="/docs/flutter-school-lesson-times.md">
+            <span>DOC</span>
+            <strong>flutter-school-lesson-times.md</strong>
+            <em>学校节次时间</em>
+          </a>
+          <a class="api-row" href="/docs/flutter-auth-question-analysis.md">
+            <span>DOC</span>
+            <strong>flutter-auth-question-analysis.md</strong>
+            <em>登录与做题辅助</em>
+          </a>
+          <a class="api-row" href="/docs/flutter-ocr-pickup-code-development.md">
+            <span>DOC</span>
+            <strong>flutter-ocr-pickup-code-development.md</strong>
+            <em>识别取件码</em>
+          </a>
+          <a class="api-row" href="/docs/question-analysis-api.md">
+            <span>DOC</span>
+            <strong>question-analysis-api.md</strong>
+            <em>题目解析</em>
+          </a>
+          <a class="api-row" href="/docs/school-importer-development.md">
+            <span>DOC</span>
+            <strong>school-importer-development.md</strong>
+            <em>学校适配</em>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Clark AAMS Backend</span>
+      <span>GPL Licensed</span>
+      <a href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
+    </footer>
+  </body>
+</html>

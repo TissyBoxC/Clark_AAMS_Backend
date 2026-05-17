@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Clark AAMS 用户注册。" />
+    <title>注册 | Clark AAMS</title>
+    <link rel="icon" href="/site/favicon.ico" />
+    <link rel="icon" href="/site/logo.png" />
+    <link rel="stylesheet" href="/site/styles.css" />
+  </head>
+  <body class="auth-page">
+    <div class="auth-bg" aria-hidden="true"></div>
+    <main>
+      <section class="auth-shell">
+        <div>
+          <a class="auth-brand" href="/">
+            <img src="/site/logo.png" alt="" />
+            <strong>Clark AAMS</strong>
+          </a>
+
+          <div class="auth-card">
+            <h1>欢迎使用 Clark AAMS</h1>
+            <form class="auth-form" id="register-form">
+              <label class="auth-field">
+                <input name="qqEmail" type="email" autocomplete="email" placeholder="QQ 邮箱" required />
+                <span>@</span>
+              </label>
+              <label class="auth-field">
+                <input name="password" type="password" autocomplete="new-password" placeholder="密码" required />
+                <span>锁</span>
+              </label>
+              <label class="auth-field">
+                <input name="passwordConfirm" type="password" autocomplete="new-password" placeholder="重复密码" required />
+                <span>验</span>
+              </label>
+              <label class="auth-field">
+                <input name="username" autocomplete="username" placeholder="用户名" required />
+                <span>名</span>
+              </label>
+              <div class="auth-row">
+                <a data-login-link href="/auth/login.html">已经有账号了？登录</a>
+                <button class="auth-submit" type="submit">注册</button>
+              </div>
+              <div class="auth-status" id="register-status"></div>
+            </form>
+            <div class="auth-footnote">
+              点击注册后会生成登录码。注册不会直接完成邮箱绑定，登录后可随时发送邮箱验证码认定。
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const registerForm = document.querySelector("#register-form");
+      const registerStatus = document.querySelector("#register-status");
+      const redirectUrl = safeRedirect(new URLSearchParams(location.search).get("redirect") || "/user/index.html");
+
+      function safeRedirect(value) {
+        if (!value || !value.startsWith("/") || value.startsWith("//")) {
+          return "/user/index.html";
+        }
+        return value;
+      }
+
+      function withLoginCodeRedirect(url, loginCode) {
+        if (!loginCode) {
+          return url;
+        }
+        const target = new URL(url, location.origin);
+        if (target.pathname === "/user" || target.pathname === "/user/" || target.pathname === "/user/index.html") {
+          target.pathname = "/user/index.html";
+          target.searchParams.set("loginCode", loginCode);
+          return `${target.pathname}${target.search}${target.hash}`;
+        }
+        return url;
+      }
+
+      document.querySelectorAll("[data-login-link]").forEach((link) => {
+        link.href = `/auth/login.html?redirect=${encodeURIComponent(redirectUrl)}`;
+      });
+
+      registerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(registerForm);
+        const password = String(data.get("password") || "");
+        const passwordConfirm = String(data.get("passwordConfirm") || "");
+        registerStatus.textContent = "";
+        if (password !== passwordConfirm) {
+          registerStatus.textContent = "两次输入的密码不一致。";
+          return;
+        }
+        try {
+          const response = await fetch("/api/v1/user/register", {
+            method: "POST",
+            cache: "no-store",
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              username: data.get("username"),
+              password,
+              qqEmail: data.get("qqEmail")
+            })
+          });
+          const result = await response.json();
+          if (!response.ok || result.code !== 0) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+          }
+          if (result.data && result.data.loginCode) {
+            localStorage.setItem("clarkAamsLoginCode", result.data.loginCode);
+          }
+          const targetUrl = withLoginCodeRedirect(redirectUrl, result.data && result.data.loginCode);
+          window.location.replace(targetUrl);
+        } catch (error) {
+          registerStatus.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>

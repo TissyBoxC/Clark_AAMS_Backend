@@ -8,220 +8,113 @@
       content="Clark AAMS 是面向高校课表导入与本地课表管理的开源应用，提供 Spring Boot 后端与 Flutter 客户端。"
     />
     <title>Clark AAMS | 珂拉课程表</title>
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/site/favicon.ico" />
     <link rel="icon" href="/site/logo.png" />
     <link rel="stylesheet" href="/site/styles.css" />
   </head>
-  <body>
-    <header class="site-header">
+  <body class="home-page">
+    <div class="home-hero-bg" aria-hidden="true"></div>
+
+    <header class="site-header home-header">
       <a class="brand" href="/" aria-label="Clark AAMS 首页">
         <img src="/site/logo.png" alt="" />
         <span>Clark AAMS</span>
       </a>
-      <nav class="nav-links" aria-label="主导航">
-        <a href="#features">功能</a>
-        <a href="#recognize">识别</a>
-        <a href="#platform">架构</a>
-        <a href="#api">接口</a>
-        <a href="#source">开源</a>
-      </nav>
-      <a class="github-link" href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
+      <div class="home-menu">
+        <button class="home-menu-button" id="home-menu-button" type="button" aria-expanded="false" aria-controls="home-menu-panel" aria-label="打开导航">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <nav class="home-menu-panel" id="home-menu-panel" aria-label="主导航" aria-hidden="true" inert>
+          <a class="active" href="/">主页</a>
+          <a href="/#platform">架构</a>
+          <a href="/#source">开源</a>
+          <a href="/api/index.html">接口</a>
+          <a href="/auth/login.html" data-user-entry>用户</a>
+          <a href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
+        </nav>
+      </div>
     </header>
 
     <main>
-      <section class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">Flutter 课程表客户端 + Spring Boot 服务端</p>
-          <h1>珂拉课程表</h1>
-          <p class="hero-text">
-            一个为高校教务系统适配而设计的课表工具。客户端负责清爽的本地课表体验，
-            后端提供学校配置、教务导入、版本检查与管理能力。
-          </p>
-          <div class="hero-actions">
-            <a class="primary-action" href="/docs/flutter-backend-integration.md">查看接入文档</a>
-            <a class="secondary-action" href="/docs/school-importer-development.md">学校适配文档</a>
-          </div>
+      <section class="home-splash">
+        <img class="home-logo" src="/site/logo.png" alt="" />
+        <h1>Clark AAMS</h1>
+        <p class="home-subtitle">快速、清爽的高校课程表服务</p>
+        <p class="home-summary">
+          为 Flutter 课程表客户端提供学校配置、教务导入、版本检查和开放接口。
+        </p>
+        <div class="hero-actions home-actions">
+          <a class="primary-action" href="/auth/login.html" data-user-entry>进入用户中心</a>
+          <a class="secondary-action" href="/api/index.html">查看接口</a>
+        </div>
+        <div class="home-status-group">
           <div class="status-strip" id="api-status" aria-live="polite">
             <span class="status-dot"></span>
-            <span>正在检查后端状态</span>
+            <span>正在检查最新版本</span>
           </div>
-        </div>
-
-        <div class="phone-wrap" aria-label="课程表界面预览">
-          <div class="phone">
-            <div class="phone-top">
-              <span>第 6 周</span>
-              <strong>课程表</strong>
-              <span>JIT</span>
-            </div>
-            <div class="week-row">
-              <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span>
-            </div>
-            <div class="schedule-grid">
-              <div class="lesson-index">1</div>
-              <div class="course-card blue">高等数学<br /><small>A101</small></div>
-              <div></div>
-              <div class="course-card green">英语听说<br /><small>B304</small></div>
-              <div></div>
-              <div></div>
-
-              <div class="lesson-index">3</div>
-              <div></div>
-              <div class="course-card purple">数据结构<br /><small>实验楼</small></div>
-              <div></div>
-              <div class="course-card amber">体育<br /><small>操场</small></div>
-              <div></div>
-
-              <div class="lesson-index">5</div>
-              <div class="course-card cyan">线性代数<br /><small>C208</small></div>
-              <div></div>
-              <div></div>
-              <div class="course-card rose">形势政策<br /><small>D102</small></div>
-              <div></div>
-            </div>
+          <div class="status-strip user-strip" id="user-status" aria-live="polite">
+            <span class="status-dot"></span>
+            <span>正在检查登录状态</span>
+            <a class="user-link" href="/auth/login.html" data-user-entry>用户</a>
           </div>
         </div>
       </section>
 
-      <section class="tool-section" id="recognize">
-        <div class="tool-copy">
-          <p class="eyebrow">Course OCR</p>
-          <h2>上传课表截图，生成可取回的课程 JSON</h2>
+      <section class="home-intro" id="features">
+        <div class="home-intro-copy">
+          <p class="eyebrow">Workflow</p>
+          <h2>把复杂的教务接入压缩成几步</h2>
           <p>
-            选择一张或多张课表图片，服务端会调用已配置的视觉模型识别课程，
-            保存原图与 JSON，并生成 8 位取件码。
+            课程表应用不应该把每个学校的教务逻辑都塞进客户端。
+            Clark AAMS 把适配、识别、版本策略和接口文档集中到服务端，让客户端只关心稳定的数据结构。
           </p>
         </div>
-
-        <div class="tool-panel">
-          <div class="tool-tabs" role="tablist" aria-label="课表识别工具">
-            <button class="tool-tab active" type="button" data-mode="upload">上传识别</button>
-            <button class="tool-tab" type="button" data-mode="pickup">取件码查询</button>
-          </div>
-
-          <form class="tool-form active" id="upload-form">
-            <div class="drop-zone" id="drop-zone">
-              <input id="image-input" name="images" type="file" accept="image/*" multiple required />
-              <div class="drop-icon">+</div>
-              <strong>拖入课表图片，或点击选择文件</strong>
-              <span>支持多张截图，建议上传完整周视图或连续截图。</span>
+        <div class="flow-list">
+          <article class="flow-item">
+            <span>01</span>
+            <div>
+              <h3>学校能力配置</h3>
+              <p>按学校维护登录、解析和导入能力，客户端通过统一接口读取可用能力。</p>
             </div>
-            <div class="file-list" id="file-list">尚未选择图片</div>
-            <button class="primary-action" type="submit">上传并识别</button>
-          </form>
-
-          <form class="tool-form" id="pickup-form">
-            <label>
-              取件码
-              <input name="code" maxlength="8" autocomplete="off" placeholder="例如 A7K9Q2TX" required />
-            </label>
-            <button class="primary-action" type="submit">查询 JSON</button>
-          </form>
-
-          <div class="pickup-result">
-            <div class="pickup-head">
-              <span id="tool-status">等待操作</span>
-              <strong id="pickup-code"></strong>
+          </article>
+          <article class="flow-item">
+            <span>02</span>
+            <div>
+              <h3>课表数据转换</h3>
+              <p>教务 HTML、截图识别结果和人工导入都收敛成同一份课程 JSON。</p>
             </div>
-            <div class="progress-track" id="progress-track" aria-hidden="true">
-              <div class="progress-bar" id="progress-bar"></div>
+          </article>
+          <article class="flow-item">
+            <span>03</span>
+            <div>
+              <h3>客户端稳定消费</h3>
+              <p>Flutter 端只负责展示、编辑和本地存储，不被教务系统变化牵着走。</p>
             </div>
-            <div class="tool-hint" id="tool-hint">上传后会返回课程 JSON，并生成 8 位取件码用于后续取回。</div>
-            <textarea id="course-json" spellcheck="false" placeholder="识别或查询结果会显示在这里"></textarea>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="features">
-        <div class="section-heading">
-          <p class="eyebrow">Capabilities</p>
-          <h2>为课表导入和维护准备的核心能力</h2>
-        </div>
-        <div class="feature-grid">
-          <article class="feature-card">
-            <span class="feature-icon">校</span>
-            <h3>学校配置</h3>
-            <p>后端按学校拆分能力，当前已内置金陵科技学院 JIT 配置，并保留继续扩展的结构。</p>
-          </article>
-          <article class="feature-card">
-            <span class="feature-icon">导</span>
-            <h3>教务导入</h3>
-            <p>通过登录会话提交教务数据，服务端解析课程信息，返回客户端统一的课程模型。</p>
-          </article>
-          <article class="feature-card">
-            <span class="feature-icon">版</span>
-            <h3>版本检查</h3>
-            <p>客户端可向后端查询更新策略、发布说明与下载来源，支持可选更新和强制更新。</p>
-          </article>
-          <article class="feature-card">
-            <span class="feature-icon">管</span>
-            <h3>管理入口</h3>
-            <p>后端自带静态管理页，用于维护学校脚手架与版本配置，便于后续适配更多学校。</p>
           </article>
         </div>
       </section>
 
-      <section class="split-section" id="platform">
-        <div>
+      <section class="home-platform" id="platform">
+        <div class="platform-copy">
           <p class="eyebrow">Architecture</p>
           <h2>移动端保留本地体验，服务端专注公共能力</h2>
           <p>
-            Clark AAMS 的客户端使用 Flutter 与 Material 3 构建课程表体验，
-            课程与设置保存在本地。Spring Boot 后端则承担学校列表、教务解析、
-            健康检查与版本策略，减少客户端中与学校教务系统强绑定的逻辑。
+            Clark AAMS 的客户端使用 Flutter 构建课表体验，课程与设置保存在本地。
+            Spring Boot 后端承担学校列表、教务解析、AI 识别、健康检查与版本策略，
+            减少客户端与学校教务系统的强绑定逻辑。
           </p>
         </div>
-        <div class="stack-panel">
-          <div class="stack-item">
-            <span>Client</span>
-            <strong>Flutter / Dart</strong>
-            <p>课程表、设置、导入流程、本地存储</p>
-          </div>
-          <div class="stack-item">
-            <span>Backend</span>
-            <strong>Spring Boot 4 / Java 21</strong>
-            <p>学校配置、教务解析、版本检查、管理页面</p>
-          </div>
-          <div class="stack-item">
-            <span>Data</span>
-            <strong>统一课程 JSON</strong>
-            <p>课程名称、周次、节次、地点、教师、原始时间</p>
-          </div>
+        <div class="platform-stack">
+          <div><span>Client</span><strong>Flutter / Dart</strong></div>
+          <div><span>Backend</span><strong>Spring Boot 4 / Java 21</strong></div>
+          <div><span>Data</span><strong>统一课程 JSON</strong></div>
         </div>
       </section>
 
-      <section class="section api-section" id="api">
-        <div class="section-heading">
-          <p class="eyebrow">API</p>
-          <h2>当前服务端入口</h2>
-        </div>
-        <div class="api-grid">
-          <a class="api-row" href="/api/v1/health">
-            <span>GET</span>
-            <strong>/api/v1/health</strong>
-            <em>服务状态</em>
-          </a>
-          <a class="api-row" href="/api/v1/schools">
-            <span>GET</span>
-            <strong>/api/v1/schools</strong>
-            <em>学校列表</em>
-          </a>
-          <a class="api-row" href="#recognize">
-            <span>POST</span>
-            <strong>/api/v1/course-pickups</strong>
-            <em>图片识别并生成取件码</em>
-          </a>
-          <a class="api-row" href="/docs/school-importer-development.md">
-            <span>DOC</span>
-            <strong>/docs/school-importer-development.md</strong>
-            <em>学校适配文档</em>
-          </a>
-        </div>
-      </section>
-
-      <section class="cta-section" id="source">
+      <section class="home-open" id="source">
         <div>
-          <p class="eyebrow">Open Source</p>
           <h2>把更多学校接入同一个课表体验</h2>
           <p>新增学校时，只需要按后端学校适配结构实现配置、登录会话解析与课程转换。</p>
         </div>
@@ -229,244 +122,95 @@
       </section>
     </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer home-footer">
       <span>Clark AAMS Backend</span>
       <span>GPL Licensed</span>
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">冀ICP备2026000737号</a>
       <a href="https://github.com/TissyBoxC/Clark_AAMS">GitHub</a>
     </footer>
 
-    <div class="modal-backdrop" id="pickup-modal" hidden>
-      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pickup-modal-title">
-        <button class="modal-close" id="modal-close" type="button" aria-label="关闭">×</button>
-        <p class="eyebrow">Pickup Code</p>
-        <h2 id="pickup-modal-title">课程 JSON 已生成</h2>
-        <p>请保存取件码，之后可以用它重新获取本次识别出的 JSON。</p>
-        <div class="modal-code" id="modal-code"></div>
-        <div class="modal-actions">
-          <button class="primary-action" id="copy-code-button" type="button">复制取件码</button>
-          <button class="secondary-action" id="modal-ok-button" type="button">关闭</button>
-        </div>
-        <div class="copy-status" id="copy-status"></div>
-      </div>
-    </div>
-
     <script>
       const statusBox = document.querySelector("#api-status");
-      const toolStatus = document.querySelector("#tool-status");
-      const toolHint = document.querySelector("#tool-hint");
-      const pickupCode = document.querySelector("#pickup-code");
-      const courseJson = document.querySelector("#course-json");
-      const uploadForm = document.querySelector("#upload-form");
-      const pickupForm = document.querySelector("#pickup-form");
-      const imageInput = document.querySelector("#image-input");
-      const dropZone = document.querySelector("#drop-zone");
-      const fileList = document.querySelector("#file-list");
-      const progressTrack = document.querySelector("#progress-track");
-      const progressBar = document.querySelector("#progress-bar");
-      const pickupModal = document.querySelector("#pickup-modal");
-      const modalCode = document.querySelector("#modal-code");
-      const copyCodeButton = document.querySelector("#copy-code-button");
-      const modalClose = document.querySelector("#modal-close");
-      const modalOkButton = document.querySelector("#modal-ok-button");
-      const copyStatus = document.querySelector("#copy-status");
-      const tabs = document.querySelectorAll(".tool-tab");
-      let lastPickupCode = "";
+      const userStatus = document.querySelector("#user-status");
+      const menuButton = document.querySelector("#home-menu-button");
+      const menuPanel = document.querySelector("#home-menu-panel");
+      const userEntries = document.querySelectorAll("[data-user-entry]");
+      let userEntryTarget = "/auth/login.html";
 
-      tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-          const mode = tab.dataset.mode;
-          tabs.forEach((item) => item.classList.toggle("active", item === tab));
-          uploadForm.classList.toggle("active", mode === "upload");
-          pickupForm.classList.toggle("active", mode === "pickup");
-          resetProgress();
+      menuPanel.inert = true;
+
+      function setUserEntryTarget(target) {
+        userEntryTarget = target;
+        userEntries.forEach((entry) => {
+          entry.href = target;
         });
-      });
+      }
 
-      dropZone.addEventListener("click", () => imageInput.click());
-      imageInput.addEventListener("change", renderSelectedFiles);
-      ["dragenter", "dragover"].forEach((eventName) => {
-        dropZone.addEventListener(eventName, (event) => {
+      userEntries.forEach((entry) => {
+        entry.addEventListener("click", async (event) => {
           event.preventDefault();
-          dropZone.classList.add("dragging");
-        });
-      });
-      ["dragleave", "drop"].forEach((eventName) => {
-        dropZone.addEventListener(eventName, (event) => {
-          event.preventDefault();
-          dropZone.classList.remove("dragging");
-        });
-      });
-      dropZone.addEventListener("drop", (event) => {
-        const files = Array.from(event.dataTransfer.files).filter((file) => file.type.startsWith("image/"));
-        if (files.length === 0) {
-          setToolState("未发现可用图片", "", "请拖入 PNG、JPG、WebP 等图片文件。");
-          return;
-        }
-        const transfer = new DataTransfer();
-        files.forEach((file) => transfer.items.add(file));
-        imageInput.files = transfer.files;
-        renderSelectedFiles();
-      });
-
-      uploadForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        if (imageInput.files.length === 0) {
-          setToolState("请选择课表图片", "", "可以点击上传区域选择，也可以直接拖入图片。");
-          return;
-        }
-        setToolState("准备上传", "", "正在整理图片，请保持页面打开。");
-        setProgress(4);
-        const formData = new FormData();
-        for (const file of imageInput.files) {
-          formData.append("images", file);
-        }
-        try {
-          const result = await uploadWithProgress(formData);
-          setToolState("识别完成", result.data.pickupCode);
-          setProgress(100);
-          courseJson.value = JSON.stringify(result.data.courses, null, 2);
-          showPickupModal(result.data.pickupCode);
-        } catch (error) {
-          setToolState(error.message, "", "请确认后台 AI 配置可用，并重新上传完整截图。");
-          setProgress(0);
-          courseJson.value = "";
-        }
-      });
-
-      pickupForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const code = pickupForm.code.value.trim().toUpperCase();
-        setToolState("正在查询", code, "正在按取件码获取 JSON，请稍候。");
-        setProgress(35);
-        try {
-          const response = await fetch(`/api/v1/course-pickups/${encodeURIComponent(code)}`, {
-            cache: "no-store"
-          });
-          const text = await response.text();
-          if (!response.ok) {
-            throw new Error(text || `HTTP ${response.status}`);
+          try {
+            const response = await fetch("/api/v1/user/me", { cache: "no-store" });
+            const payload = await response.json();
+            const user = payload && payload.data ? payload.data : null;
+            location.href = user && user.id > 0 ? "/user/index.html" : "/auth/login.html";
+          } catch {
+            location.href = userEntryTarget;
           }
-          setToolState("查询完成", code);
-          setProgress(100);
-          courseJson.value = JSON.stringify(JSON.parse(text), null, 2);
-        } catch (error) {
-          setToolState(error.message, code, "请检查取件码是否正确，或确认该记录没有被后台删除。");
-          setProgress(0);
-          courseJson.value = "";
-        }
-      });
-
-      function uploadWithProgress(formData) {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/api/v1/course-pickups");
-          xhr.upload.addEventListener("progress", (event) => {
-            if (event.lengthComputable) {
-              const uploaded = Math.round((event.loaded / event.total) * 45);
-              setProgress(Math.max(8, uploaded));
-              setToolState("正在上传图片", "", "图片上传完成后会进入 AI 识别阶段。");
-            }
-          });
-          xhr.addEventListener("load", () => {
-            try {
-              const result = JSON.parse(xhr.responseText || "{}");
-              if (xhr.status < 200 || xhr.status >= 300 || result.code !== 0) {
-                reject(new Error(result.message || `HTTP ${xhr.status}`));
-                return;
-              }
-              setProgress(92);
-              setToolState("正在生成 JSON", result.data.pickupCode || "", "AI 识别已完成，正在整理返回结果。");
-              resolve(result);
-            } catch (error) {
-              reject(error);
-            }
-          });
-          xhr.addEventListener("error", () => reject(new Error("网络请求失败")));
-          xhr.addEventListener("timeout", () => reject(new Error("识别请求超时")));
-          xhr.timeout = 180000;
-          setTimeout(() => {
-            if (progressBar.style.width !== "100%") {
-              setProgress(62);
-              setToolState("AI 正在识别", "", "课表截图较多时会花一些时间。");
-            }
-          }, 900);
-          xhr.send(formData);
         });
-      }
+      });
 
-      function renderSelectedFiles() {
-        const files = Array.from(imageInput.files);
-        if (files.length === 0) {
-          fileList.textContent = "尚未选择图片";
-          return;
-        }
-        fileList.innerHTML = files.map((file) => `<span>${escapeHtml(file.name)}</span>`).join("");
-        setToolState(`已选择 ${files.length} 张图片`, "", "点击上传后会开始识别并生成取件码。");
-      }
+      menuButton.addEventListener("click", () => {
+        const expanded = menuButton.getAttribute("aria-expanded") === "true";
+        const nextExpanded = !expanded;
+        menuButton.setAttribute("aria-expanded", String(nextExpanded));
+        menuPanel.setAttribute("aria-hidden", String(!nextExpanded));
+        menuPanel.inert = !nextExpanded;
+      });
 
-      function setToolState(message, code, hint = "") {
-        toolStatus.textContent = message;
-        pickupCode.textContent = code ? `取件码 ${code}` : "";
-        toolHint.textContent = hint || "上传后会返回课程 JSON，并生成 8 位取件码用于后续取回。";
-      }
-
-      function setProgress(value) {
-        progressTrack.classList.toggle("active", value > 0 && value < 100);
-        progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
-      }
-
-      function resetProgress() {
-        setProgress(0);
-      }
-
-      function showPickupModal(code) {
-        lastPickupCode = code;
-        modalCode.textContent = code;
-        copyStatus.textContent = "";
-        pickupModal.hidden = false;
-      }
-
-      function closePickupModal() {
-        pickupModal.hidden = true;
-      }
-
-      async function copyPickupCode() {
-        try {
-          await navigator.clipboard.writeText(lastPickupCode);
-          copyStatus.textContent = "已复制";
-        } catch {
-          copyStatus.textContent = "复制失败，请手动选择取件码";
-        }
-      }
-
-      function escapeHtml(value) {
-        return String(value)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      copyCodeButton.addEventListener("click", copyPickupCode);
-      modalClose.addEventListener("click", closePickupModal);
-      modalOkButton.addEventListener("click", closePickupModal);
-      pickupModal.addEventListener("click", (event) => {
-        if (event.target === pickupModal) {
-          closePickupModal();
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".home-menu")) {
+          menuButton.setAttribute("aria-expanded", "false");
+          menuPanel.setAttribute("aria-hidden", "true");
+          menuPanel.inert = true;
         }
       });
 
-      fetch("/api/v1/health", { cache: "no-store" })
+      fetch("/api/v1/app/version?platform=android&currentVersion=0.0.0&currentBuild=0", { cache: "no-store" })
         .then((response) => response.json())
         .then((payload) => {
-          const version = payload && payload.data ? payload.data.version : "";
+          const version = payload && payload.data ? payload.data.latestVersion : "";
+          const build = payload && payload.data ? payload.data.latestBuild : "";
           statusBox.classList.add("is-up");
-          statusBox.innerHTML = `<span class="status-dot"></span><span>后端在线${version ? ` · v${version}` : ""}</span>`;
+          statusBox.innerHTML = `<span class="status-dot"></span><span>最新版本${version ? ` · v${version}` : ""}${build ? ` (${build})` : ""}</span>`;
         })
         .catch(() => {
           statusBox.classList.add("is-down");
-          statusBox.innerHTML = '<span class="status-dot"></span><span>后端状态暂不可用</span>';
+          statusBox.innerHTML = '<span class="status-dot"></span><span>版本状态暂不可用</span>';
+        });
+
+      fetch("/api/v1/user/me", { cache: "no-store" })
+        .then((response) => response.json())
+        .then((payload) => {
+          const user = payload && payload.data ? payload.data : null;
+          if (user && user.id > 0) {
+            setUserEntryTarget("/user/index.html");
+            if (user.emailBound) {
+              userStatus.remove();
+            } else {
+              userStatus.classList.add("is-down");
+              userStatus.innerHTML = `<span class="status-dot"></span><span>暂未绑定邮箱</span><a class="user-link" href="/user/index.html">去绑定</a>`;
+            }
+          } else {
+            setUserEntryTarget("/auth/login.html");
+            userStatus.classList.add("is-down");
+            userStatus.innerHTML = '<span class="status-dot"></span><span>暂未登录</span><a class="user-link" href="/auth/login.html">登录</a>';
+          }
+        })
+        .catch(() => {
+          setUserEntryTarget("/auth/login.html");
+          userStatus.classList.add("is-down");
+          userStatus.innerHTML = '<span class="status-dot"></span><span>暂未登录</span><a class="user-link" href="/auth/login.html">登录</a>';
         });
     </script>
   </body>

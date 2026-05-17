@@ -102,6 +102,7 @@ GET /api/v1/schools
           "https://jwxt.jit.edu.cn/xs_main.aspx*"
         ]
       },
+      "lessonTimeProfile": "general-a",
       "version": 1
     }
   ]
@@ -133,7 +134,60 @@ GET /api/v1/schools/jit
 
 响应结构与学校列表中的单项一致。
 
-## 3. 教务系统课程导入
+## 3. 学校节次时间
+
+前端在用户选择学校后，可以调用该接口获取该学校第 1-13 节课的上课时间。不同学校可以绑定不同时间配置。
+
+### 请求
+
+```http
+GET /api/v1/schools/{schoolId}/lesson-times
+```
+
+示例：
+
+```http
+GET /api/v1/schools/jit/lesson-times
+```
+
+### 响应
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "schoolId": "jit",
+    "profile": "general-a",
+    "lessons": [
+      {"lesson": 1, "startTime": "08:30"},
+      {"lesson": 2, "startTime": "09:20"},
+      {"lesson": 3, "startTime": "10:25"},
+      {"lesson": 4, "startTime": "11:15"},
+      {"lesson": 5, "startTime": "13:30"},
+      {"lesson": 6, "startTime": "14:20"},
+      {"lesson": 7, "startTime": "15:25"},
+      {"lesson": 8, "startTime": "16:15"},
+      {"lesson": 9, "startTime": ""},
+      {"lesson": 10, "startTime": ""},
+      {"lesson": 11, "startTime": ""},
+      {"lesson": 12, "startTime": ""},
+      {"lesson": 13, "startTime": ""}
+    ]
+  }
+}
+```
+
+当前后端已预留两套通用时间配置：`general-a`、`general-b`。接口只返回每节课的开始时间，不返回下课时间。两套配置目前已写入第 1-8 节开始时间；第 9-13 节仍为空，待确认真实作息时间后替换。Flutter 侧建议按接口返回值渲染，不要在客户端写死节次时间。
+
+两套通用配置当前内容：
+
+| profile | 第1节 | 第2节 | 第3节 | 第4节 | 第5节 | 第6节 | 第7节 | 第8节 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `general-a` | 08:30 | 09:20 | 10:25 | 11:15 | 13:30 | 14:20 | 15:25 | 16:15 |
+| `general-b` | 08:00 | 08:55 | 10:00 | 10:55 | 13:30 | 14:25 | 14:30 | 16:25 |
+
+## 4. 教务系统课程导入
 
 ### 请求
 
@@ -194,7 +248,7 @@ Content-Type: application/json
 - 后端不返回 `colorValue`，课程颜色仍由 Flutter 本地流程处理。
 - 导入成功后继续使用现有“选择第一周第一天”和保存逻辑。
 
-## 4. App 版本检查
+## 5. App 版本检查
 
 版本检查用于控制 Flutter App 更新，支持三种状态：
 
@@ -315,7 +369,7 @@ switch (response.updateType) {
 }
 ```
 
-## 5. 健康检查
+## 6. 健康检查
 
 ### 请求
 

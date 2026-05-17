@@ -26,4 +26,14 @@ public class SchoolController {
     public ApiResponse<SchoolDto> getSchool(@PathVariable String schoolId) {
         return ApiResponse.ok(schoolService.getSchool(schoolId));
     }
+
+    @GetMapping("/{schoolId}/lesson-times")
+    public ApiResponse<SchoolLessonTimesDto> getSchoolLessonTimes(@PathVariable String schoolId) {
+        return ApiResponse.ok(schoolService.getLessonTimes(schoolId));
+    }
+
+    @GetMapping("/lesson-time-profiles")
+    public ApiResponse<List<SchoolLessonTimesDto>> listLessonTimeProfiles() {
+        return ApiResponse.ok(schoolService.listLessonTimeProfiles());
+    }
 }

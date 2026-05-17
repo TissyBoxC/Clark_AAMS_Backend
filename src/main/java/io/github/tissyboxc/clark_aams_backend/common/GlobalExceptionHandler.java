@@ -1,5 +1,6 @@
 package io.github.tissyboxc.clark_aams_backend.common;
 
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,11 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.defaultMessage()));
     }
 
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbort(ClientAbortException exception) {
+        log.debug("Client closed connection before response was fully written: {}", exception.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception exception) {
         log.error("Unhandled backend error", exception);
@@ -45,7 +51,8 @@ public class GlobalExceptionHandler {
         return switch (errorCode) {
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case LOGIN_INVALID -> HttpStatus.UNAUTHORIZED;
-            case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND, USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case USER_EMAIL_CONFLICT -> HttpStatus.CONFLICT;
             case ACADEMIC_REQUEST_FAILED, COURSE_PARSE_FAILED, INTERNAL_ERROR, AI_REQUEST_FAILED ->
                     HttpStatus.INTERNAL_SERVER_ERROR;
             case OK -> HttpStatus.OK;

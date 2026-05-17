@@ -6,6 +6,8 @@ public enum ErrorCode {
     LOGIN_INVALID(40101, "登录状态无效或已过期，请重新登录"),
     SCHOOL_NOT_FOUND(40401, "学校不存在"),
     IMPORTER_NOT_FOUND(40402, "当前学校暂未配置教务系统导入"),
+    USER_NOT_FOUND(40403, "用户不存在"),
+    USER_EMAIL_CONFLICT(40901, "QQ 邮箱已被绑定"),
     ACADEMIC_REQUEST_FAILED(50001, "教务系统请求失败"),
     COURSE_PARSE_FAILED(50002, "课表解析失败"),
     INTERNAL_ERROR(50003, "后端内部错误"),

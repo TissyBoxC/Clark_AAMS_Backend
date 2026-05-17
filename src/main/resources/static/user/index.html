@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Clark AAMS 用户中心与课表识别工作台。" />
+    <title>用户中心 | Clark AAMS</title>
+    <link rel="icon" href="/site/favicon.ico" />
+    <link rel="icon" href="/site/logo.png" />
+    <link rel="stylesheet" href="/site/styles.css" />
+  </head>
+  <body class="user-page">
+    <div class="user-layout" id="user-layout">
+      <aside class="user-sidebar" aria-label="用户中心菜单">
+        <a class="user-sidebar-head" href="/" aria-label="Clark AAMS 首页">
+          <img src="/site/logo.png" alt="" />
+          <strong>Clark AAMS</strong>
+        </a>
+        <div class="user-profile-mini">
+          <img class="user-avatar" id="side-user-avatar" src="/site/logo.png" alt="" />
+          <div class="user-profile-text">
+            <span>当前账号</span>
+            <strong id="side-user-name">未登录</strong>
+          </div>
+        </div>
+        <nav>
+          <div class="user-side-section">
+            <div class="user-side-title">用户中心</div>
+            <button class="user-side-link active" type="button" data-view-target="account">
+              <span class="user-side-icon">USER</span>
+              <span class="user-side-text">用户中心</span>
+            </button>
+            <button class="user-side-link" type="button" data-view-target="recognize">
+              <span class="user-side-icon">OCR</span>
+              <span class="user-side-text">识别</span>
+            </button>
+          </div>
+          <div class="user-side-section">
+            <div class="user-side-title">浏览</div>
+            <a class="user-side-link" href="/">
+              <span class="user-side-icon">HOME</span>
+              <span class="user-side-text">项目主页</span>
+            </a>
+          </div>
+        </nav>
+        <div class="user-sidebar-foot">
+          <span>冀ICP备2026000737号</span>
+        </div>
+      </aside>
+
+      <main class="user-main">
+        <header class="user-topbar">
+          <div class="user-top-actions">
+            <button class="user-collapse-button" id="sidebar-toggle" type="button" aria-label="收缩菜单">≡</button>
+            <h1 id="view-title">用户中心</h1>
+          </div>
+          <div class="user-top-actions">
+            <div class="user-top-status" id="top-user-status">
+              <span class="status-dot"></span>
+              <span>正在检查登录状态</span>
+            </div>
+            <button class="user-account-button" id="account-view-button" type="button">账号</button>
+          </div>
+        </header>
+
+        <div class="user-content">
+          <section class="user-view active" id="account-view">
+            <div class="user-card">
+              <div class="user-card-head">
+                <h2>账号状态</h2>
+                <span class="account-status">登录后可使用学习通学习辅助，发送QQ邮箱验证码完成认定。</span>
+              </div>
+              <div class="user-card-body">
+                <div class="user-account-grid">
+                  <div class="profile-panel" id="profile-panel" hidden>
+                    <div class="email-bind-strip" id="email-bind-strip">
+                      <div>
+                        <span>邮箱绑定</span>
+                        <strong id="email-bind-title">正在检查</strong>
+                        <em id="email-bind-desc">登录后会显示当前邮箱认定状态。</em>
+                      </div>
+                      <button class="secondary-action" id="send-bind-code-button" type="button">发送邮箱验证码</button>
+                    </div>
+                    <h2>我的页面</h2>
+                    <div class="profile-grid" id="profile-grid"></div>
+                    <div class="account-status" id="profile-note"></div>
+                    <form class="bind-form" id="bind-code-form" hidden>
+                      <label>邮箱验证码<input name="code" autocomplete="one-time-code" placeholder="输入邮箱验证码" /></label>
+                      <button class="primary-action" type="submit">完成认定</button>
+                    </form>
+                    <div class="profile-actions">
+                      <button class="secondary-action" id="logout-button" type="button">退出登录</button>
+                    </div>
+                  </div>
+
+                  <div class="empty-panel">
+                    <span>用户中心暂时只保留账号状态、邮箱绑定状态和登录码告知。</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="user-view" id="recognize-view">
+            <div class="user-card">
+              <div class="user-card-head">
+                <h2>课表识别</h2>
+                <span class="account-status">上传课表截图，生成课程 JSON 与取件码。</span>
+              </div>
+              <div class="user-card-body">
+                <div class="user-recognize-grid">
+                  <div class="user-recognize-copy">
+                    <p class="eyebrow">Course OCR</p>
+                    <h2>上传、识别、取回放在同一个操作台</h2>
+                    <p>
+                      上传完整周视图或连续截图，后端会交给已配置的视觉模型识别课程内容。
+                      上传成功后请保存取件码，后续可以通过取件码重新查询本次识别出的课程 JSON。
+                    </p>
+                    <div class="user-note-list">
+                      <span>原图与 JSON 会随取件码保存</span>
+                      <span>取件码查询不需要重新上传图片</span>
+                      <span>识别接口保持开放，不强制要求登录</span>
+                    </div>
+                  </div>
+
+                  <div class="tool-panel">
+                    <div class="tool-tabs" role="tablist" aria-label="课表识别工具">
+                      <button class="tool-tab active" type="button" data-mode="upload">上传识别</button>
+                      <button class="tool-tab" type="button" data-mode="pickup">取件码查询</button>
+                    </div>
+
+                    <form class="tool-form active" id="upload-form">
+                      <div class="drop-zone" id="drop-zone">
+                        <input id="image-input" name="images" type="file" accept="image/*" multiple required />
+                        <div class="drop-icon">+</div>
+                        <strong>拖入课表图片，或点击选择文件</strong>
+                        <span>支持多张截图，建议上传完整周视图或连续截图。</span>
+                      </div>
+                      <div class="file-list" id="file-list">尚未选择图片</div>
+                      <button class="primary-action" type="submit">上传并识别</button>
+                    </form>
+
+                    <form class="tool-form" id="pickup-form">
+                      <label>
+                        取件码
+                        <input name="code" maxlength="8" autocomplete="off" placeholder="例如 A7K9Q2TX" required />
+                      </label>
+                      <button class="primary-action" type="submit">查询 JSON</button>
+                    </form>
+
+                    <div class="pickup-result">
+                      <div class="pickup-head">
+                        <span id="tool-status">等待操作</span>
+                        <strong id="pickup-code"></strong>
+                      </div>
+                      <div class="progress-track" id="progress-track" aria-hidden="true">
+                        <div class="progress-bar" id="progress-bar"></div>
+                      </div>
+                      <div class="tool-hint" id="tool-hint">上传后会返回课程 JSON，并生成 8 位取件码用于后续取回。</div>
+                      <textarea id="course-json" spellcheck="false" placeholder="识别或查询结果会显示在这里"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="pickup-modal" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pickup-modal-title">
+        <button class="modal-close" id="modal-close" type="button" aria-label="关闭">×</button>
+        <p class="eyebrow">Pickup Code</p>
+        <h2 id="pickup-modal-title">课程 JSON 已生成</h2>
+        <p>请保存取件码，之后可以用它重新获取本次识别出的 JSON。</p>
+        <div class="modal-code" id="modal-code"></div>
+        <div class="modal-actions">
+          <button class="primary-action" id="copy-code-button" type="button">复制取件码</button>
+          <button class="secondary-action" id="modal-ok-button" type="button">关闭</button>
+        </div>
+        <div class="copy-status" id="copy-status"></div>
+      </div>
+    </div>
+
+    <script>
+      const userLayout = document.querySelector("#user-layout");
+      const sidebarToggle = document.querySelector("#sidebar-toggle");
+      const sideUserAvatar = document.querySelector("#side-user-avatar");
+      const sideUserName = document.querySelector("#side-user-name");
+      const topUserStatus = document.querySelector("#top-user-status");
+      const accountViewButton = document.querySelector("#account-view-button");
+      const viewTitle = document.querySelector("#view-title");
+      const viewButtons = document.querySelectorAll("[data-view-target]");
+      const accountView = document.querySelector("#account-view");
+      const recognizeView = document.querySelector("#recognize-view");
+
+      const profilePanel = document.querySelector("#profile-panel");
+      const profileGrid = document.querySelector("#profile-grid");
+      const profileNote = document.querySelector("#profile-note");
+      const emailBindStrip = document.querySelector("#email-bind-strip");
+      const emailBindTitle = document.querySelector("#email-bind-title");
+      const emailBindDesc = document.querySelector("#email-bind-desc");
+      const bindCodeForm = document.querySelector("#bind-code-form");
+      const sendBindCodeButton = document.querySelector("#send-bind-code-button");
+      const logoutButton = document.querySelector("#logout-button");
+      let currentUser = null;
+
+      const toolStatus = document.querySelector("#tool-status");
+      const toolHint = document.querySelector("#tool-hint");
+      const pickupCode = document.querySelector("#pickup-code");
+      const courseJson = document.querySelector("#course-json");
+      const uploadForm = document.querySelector("#upload-form");
+      const pickupForm = document.querySelector("#pickup-form");
+      const imageInput = document.querySelector("#image-input");
+      const dropZone = document.querySelector("#drop-zone");
+      const fileList = document.querySelector("#file-list");
+      const progressTrack = document.querySelector("#progress-track");
+      const progressBar = document.querySelector("#progress-bar");
+      const pickupModal = document.querySelector("#pickup-modal");
+      const modalCode = document.querySelector("#modal-code");
+      const copyCodeButton = document.querySelector("#copy-code-button");
+      const modalClose = document.querySelector("#modal-close");
+      const modalOkButton = document.querySelector("#modal-ok-button");
+      const copyStatus = document.querySelector("#copy-status");
+      const toolTabs = document.querySelectorAll(".tool-tab");
+      let lastPickupCode = "";
+
+      if (localStorage.getItem("clark-user-sidebar") === "collapsed") {
+        userLayout.classList.add("sidebar-collapsed");
+      }
+
+      sidebarToggle.addEventListener("click", () => {
+        userLayout.classList.toggle("sidebar-collapsed");
+        localStorage.setItem("clark-user-sidebar", userLayout.classList.contains("sidebar-collapsed") ? "collapsed" : "open");
+      });
+
+      accountViewButton.addEventListener("click", () => showView("account"));
+      viewButtons.forEach((button) => {
+        button.addEventListener("click", () => showView(button.dataset.viewTarget));
+      });
+
+      window.addEventListener("hashchange", () => {
+        if (location.hash === "#recognize") {
+          showView("recognize");
+        }
+      });
+
+      function showView(view) {
+        const isRecognize = view === "recognize";
+        accountView.classList.toggle("active", !isRecognize);
+        recognizeView.classList.toggle("active", isRecognize);
+        viewButtons.forEach((button) => button.classList.toggle("active", button.dataset.viewTarget === view));
+        accountViewButton.classList.toggle("active", !isRecognize);
+        viewTitle.textContent = isRecognize ? "课表识别" : "用户中心";
+        if (isRecognize) {
+          history.replaceState(null, "", "#recognize");
+        } else {
+          history.replaceState(null, "", location.pathname);
+        }
+      }
+
+      async function requestJson(url, options = {}) {
+        const loginCode = localStorage.getItem("clarkAamsLoginCode") || "";
+        const response = await fetch(url, {
+          cache: "no-store",
+          credentials: "same-origin",
+          ...options,
+          headers: {
+            "Content-Type": "application/json",
+            ...(loginCode ? {"X-Clark-Aams-Login-Code": loginCode} : {}),
+            ...(options.headers || {})
+          }
+        });
+        const result = await response.json();
+        if (!response.ok || result.code !== 0) {
+          throw new Error(result.message || `HTTP ${response.status}`);
+        }
+        return result.data;
+      }
+
+      function captureLoginCodeFromUrl() {
+        const params = new URLSearchParams(location.search);
+        const loginCode = params.get("loginCode");
+        if (!loginCode) {
+          return;
+        }
+        localStorage.setItem("clarkAamsLoginCode", loginCode);
+        params.delete("loginCode");
+        const cleanSearch = params.toString();
+        const cleanUrl = `${location.pathname}${cleanSearch ? `?${cleanSearch}` : ""}${location.hash}`;
+        history.replaceState(null, "", cleanUrl);
+      }
+
+      function rememberLoginCode(user) {
+        if (user && user.loginCode) {
+          localStorage.setItem("clarkAamsLoginCode", user.loginCode);
+        }
+      }
+
+      async function restoreSessionWithLoginCode() {
+        const loginCode = localStorage.getItem("clarkAamsLoginCode");
+        if (!loginCode) {
+          return null;
+        }
+        try {
+          const user = await requestJson("/api/v1/user/login", {
+            method: "POST",
+            body: JSON.stringify({loginCode})
+          });
+          rememberLoginCode(user);
+          return user;
+        } catch {
+          localStorage.removeItem("clarkAamsLoginCode");
+          return null;
+        }
+      }
+
+      function updateTopStatus(user) {
+        const loggedIn = user && user.id > 0;
+        const emailVerified = Boolean(loggedIn && (user.emailBound || user.emailVerified));
+        currentUser = loggedIn ? user : null;
+        sideUserName.textContent = loggedIn ? user.username || `用户 ${user.id}` : "未登录";
+        sideUserAvatar.src = loggedIn ? qqAvatarUrl(user.email) : "/site/logo.png";
+        topUserStatus.classList.toggle("is-up", emailVerified);
+        topUserStatus.classList.toggle("is-down", !emailVerified);
+        if (!loggedIn) {
+          topUserStatus.innerHTML = '<span class="status-dot"></span><span>暂未登录</span>';
+          return;
+        }
+        topUserStatus.innerHTML = emailVerified
+          ? '<span class="status-dot"></span><span>邮箱已绑定</span>'
+          : '<span class="status-dot"></span><span>暂未绑定邮箱</span>';
+      }
+
+      function updateEmailBindStrip(user) {
+        const emailVerified = Boolean(user && (user.emailBound || user.emailVerified));
+        emailBindStrip.hidden = emailVerified;
+        if (emailVerified) {
+          return;
+        }
+        emailBindStrip.classList.remove("is-bound");
+        emailBindStrip.classList.add("is-pending");
+        emailBindTitle.textContent = "邮箱暂未认定";
+        emailBindDesc.textContent = `${user.email || "当前 QQ 邮箱"} 尚未完成验证码认定，可随时发送验证码。`;
+      }
+
+      function showAuth() {
+        const redirect = encodeURIComponent(`${location.pathname}${location.hash || ""}`);
+        profilePanel.hidden = true;
+        updateTopStatus(null);
+        location.replace(`/auth/login.html?redirect=${redirect}`);
+      }
+
+      function showProfile(user, source) {
+        rememberLoginCode(user);
+        profilePanel.hidden = false;
+        updateTopStatus(user);
+        updateEmailBindStrip(user);
+        const emailVerified = Boolean(user.emailBound || user.emailVerified);
+        profileGrid.innerHTML = `
+          <div class="profile-item"><span>ID</span><strong>${user.id}</strong></div>
+          <div class="profile-item"><span>用户名</span><strong>${escapeHtml(user.username || "")}</strong></div>
+          <div class="profile-item"><span>QQ 邮箱</span><strong>${escapeHtml(user.email || "")}</strong></div>
+          <div class="profile-item login-code-item">
+            <span>登录码</span>
+            <div class="masked-code" aria-label="登录码已加密显示">•••• •••• ••••</div>
+            <button class="copy-login-code-button" type="button" data-copy-login-code>复制</button>
+          </div>
+          <div class="profile-item"><span>做题辅助次数</span><strong>${Number(user.questionAnalysisCount || 0)}</strong></div>
+        `;
+        bindCodeForm.hidden = emailVerified;
+        sendBindCodeButton.hidden = emailVerified;
+        profileNote.textContent = source === "register"
+          ? "注册成功。登录码已生成，请点击复制按钮保存。"
+          : emailVerified
+            ? ""
+            : "当前邮箱暂未绑定，可发送验证码完成认定。";
+      }
+
+      async function loadProfile() {
+        captureLoginCodeFromUrl();
+        let user = null;
+        try {
+          user = await requestJson("/api/v1/user/me");
+          if (!user || user.id <= 0) {
+            user = await restoreSessionWithLoginCode();
+          }
+        } catch {
+          showAuth();
+          showView(location.hash === "#recognize" ? "recognize" : "account");
+          return;
+        }
+        if (!user || user.id <= 0) {
+          showAuth();
+          showView(location.hash === "#recognize" ? "recognize" : "account");
+          return;
+        }
+        try {
+          showProfile(user, "login");
+        } catch (error) {
+          profilePanel.hidden = false;
+          profileGrid.innerHTML = "";
+          profileNote.textContent = `用户页渲染失败：${error.message}`;
+        }
+        showView(location.hash === "#recognize" ? "recognize" : "account");
+      }
+
+      sendBindCodeButton.addEventListener("click", async () => {
+        if (!currentUser || !currentUser.email) {
+          profileNote.textContent = "请先登录后再发送邮箱验证码。";
+          return;
+        }
+        try {
+          const user = await requestJson("/api/v1/user/email/code", {
+            method: "POST",
+            body: JSON.stringify({qqEmail: currentUser.email})
+          });
+          showProfile(user, "login");
+          bindCodeForm.hidden = Boolean(user.emailBound || user.emailVerified);
+          profileNote.textContent = "验证码已发送，请输入验证码完成认定。";
+        } catch (error) {
+          profileNote.textContent = error.message;
+        }
+      });
+
+      bindCodeForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(bindCodeForm);
+        try {
+          const user = await requestJson("/api/v1/user/email/verify", {
+            method: "POST",
+            body: JSON.stringify({code: data.get("code")})
+          });
+          showProfile(user, "login");
+        } catch (error) {
+          profileNote.textContent = error.message;
+        }
+      });
+
+      logoutButton.addEventListener("click", async () => {
+        await requestJson("/api/v1/user/logout", {method: "POST", body: "{}"});
+        localStorage.removeItem("clarkAamsLoginCode");
+        showAuth();
+      });
+
+      profilePanel.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-copy-login-code]");
+        if (!button || !currentUser || !currentUser.loginCode) {
+          return;
+        }
+        try {
+          await copyText(currentUser.loginCode);
+          profileNote.textContent = "登录码已复制。";
+        } catch {
+          profileNote.textContent = "复制失败，请稍后重试。";
+        }
+      });
+
+      toolTabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const mode = tab.dataset.mode;
+          toolTabs.forEach((item) => item.classList.toggle("active", item === tab));
+          uploadForm.classList.toggle("active", mode === "upload");
+          pickupForm.classList.toggle("active", mode === "pickup");
+          resetProgress();
+        });
+      });
+
+      dropZone.addEventListener("click", () => imageInput.click());
+      imageInput.addEventListener("change", renderSelectedFiles);
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropZone.classList.add("dragging");
+        });
+      });
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropZone.classList.remove("dragging");
+        });
+      });
+      dropZone.addEventListener("drop", (event) => {
+        const files = Array.from(event.dataTransfer.files).filter((file) => file.type.startsWith("image/"));
+        if (files.length === 0) {
+          setToolState("未发现可用图片", "", "请拖入 PNG、JPG、WebP 等图片文件。");
+          return;
+        }
+        const transfer = new DataTransfer();
+        files.forEach((file) => transfer.items.add(file));
+        imageInput.files = transfer.files;
+        renderSelectedFiles();
+      });
+
+      uploadForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (imageInput.files.length === 0) {
+          setToolState("请选择课表图片", "", "可以点击上传区域选择，也可以直接拖入图片。");
+          return;
+        }
+        setToolState("准备上传", "", "正在整理图片，请保持页面打开。");
+        setProgress(4);
+        const formData = new FormData();
+        for (const file of imageInput.files) {
+          formData.append("images", file);
+        }
+        try {
+          const result = await uploadWithProgress(formData);
+          setToolState("识别完成", result.data.pickupCode);
+          setProgress(100);
+          courseJson.value = JSON.stringify(result.data.courses, null, 2);
+          showPickupModal(result.data.pickupCode);
+        } catch (error) {
+          setToolState(error.message, "", "请确认后端 AI 配置可用，并重新上传完整截图。");
+          setProgress(0);
+          courseJson.value = "";
+        }
+      });
+
+      pickupForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const code = pickupForm.code.value.trim().toUpperCase();
+        setToolState("正在查询", code, "正在按取件码获取 JSON，请稍候。");
+        setProgress(35);
+        try {
+          const response = await fetch(`/api/v1/course-pickups/${encodeURIComponent(code)}`, {
+            cache: "no-store"
+          });
+          const text = await response.text();
+          if (!response.ok) {
+            throw new Error(text || `HTTP ${response.status}`);
+          }
+          setToolState("查询完成", code);
+          setProgress(100);
+          courseJson.value = JSON.stringify(JSON.parse(text), null, 2);
+        } catch (error) {
+          setToolState(error.message, code, "请检查取件码是否正确，或确认该记录没有被后台删除。");
+          setProgress(0);
+          courseJson.value = "";
+        }
+      });
+
+      function uploadWithProgress(formData) {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/v1/course-pickups");
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              const uploaded = Math.round((event.loaded / event.total) * 45);
+              setProgress(Math.max(8, uploaded));
+              setToolState("正在上传图片", "", "图片上传完成后会进入 AI 识别阶段。");
+            }
+          });
+          xhr.addEventListener("load", () => {
+            try {
+              const result = JSON.parse(xhr.responseText || "{}");
+              if (xhr.status < 200 || xhr.status >= 300 || result.code !== 0) {
+                reject(new Error(result.message || `HTTP ${xhr.status}`));
+                return;
+              }
+              setProgress(92);
+              setToolState("正在生成 JSON", result.data.pickupCode || "", "AI 识别已完成，正在整理返回结果。");
+              resolve(result);
+            } catch (error) {
+              reject(error);
+            }
+          });
+          xhr.addEventListener("error", () => reject(new Error("网络请求失败")));
+          xhr.addEventListener("timeout", () => reject(new Error("识别请求超时")));
+          xhr.timeout = 180000;
+          setTimeout(() => {
+            if (progressBar.style.width !== "100%") {
+              setProgress(62);
+              setToolState("AI 正在识别", "", "课表截图较多时会花一些时间。");
+            }
+          }, 900);
+          xhr.send(formData);
+        });
+      }
+
+      function renderSelectedFiles() {
+        const files = Array.from(imageInput.files);
+        if (files.length === 0) {
+          fileList.textContent = "尚未选择图片";
+          return;
+        }
+        fileList.innerHTML = files.map((file) => `<span>${escapeHtml(file.name)}</span>`).join("");
+        setToolState(`已选择 ${files.length} 张图片`, "", "点击上传后会开始识别并生成取件码。");
+      }
+
+      function setToolState(message, code, hint = "") {
+        toolStatus.textContent = message;
+        pickupCode.textContent = code ? `取件码 ${code}` : "";
+        toolHint.textContent = hint || "上传后会返回课程 JSON，并生成 8 位取件码用于后续取回。";
+      }
+
+      function setProgress(value) {
+        progressTrack.classList.toggle("active", value > 0 && value < 100);
+        progressBar.style.width = `${Math.max(0, Math.min(100, value))}%`;
+      }
+
+      function resetProgress() {
+        setProgress(0);
+      }
+
+      function showPickupModal(code) {
+        lastPickupCode = code;
+        modalCode.textContent = code;
+        copyStatus.textContent = "";
+        pickupModal.hidden = false;
+      }
+
+      function closePickupModal() {
+        pickupModal.hidden = true;
+      }
+
+      async function copyText(value) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+          return;
+        }
+        const input = document.createElement("textarea");
+        input.value = value;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.left = "-9999px";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+
+      async function copyPickupCode() {
+        try {
+          await copyText(lastPickupCode);
+          copyStatus.textContent = "已复制";
+        } catch {
+          copyStatus.textContent = "复制失败，请手动选择取件码";
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function qqAvatarUrl(email) {
+        const match = String(email || "").trim().match(/^([1-9]\d{4,11})@qq\.com$/i);
+        return match ? `https://q1.qlogo.cn/g?b=qq&nk=${encodeURIComponent(match[1])}&s=100` : "/site/logo.png";
+      }
+
+      sideUserAvatar.addEventListener("error", () => {
+        sideUserAvatar.src = "/site/logo.png";
+      });
+
+      copyCodeButton.addEventListener("click", copyPickupCode);
+      modalClose.addEventListener("click", closePickupModal);
+      modalOkButton.addEventListener("click", closePickupModal);
+      pickupModal.addEventListener("click", (event) => {
+        if (event.target === pickupModal) {
+          closePickupModal();
+        }
+      });
+
+      loadProfile();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Clark AAMS 用户登录。" />
+    <title>登录 | Clark AAMS</title>
+    <link rel="icon" href="/site/favicon.ico" />
+    <link rel="icon" href="/site/logo.png" />
+    <link rel="stylesheet" href="/site/styles.css" />
+  </head>
+  <body class="auth-page">
+    <div class="auth-bg" aria-hidden="true"></div>
+    <main>
+      <section class="auth-shell">
+        <div>
+          <a class="auth-brand" href="/">
+            <img src="/site/logo.png" alt="" />
+            <strong>Clark AAMS</strong>
+          </a>
+
+          <div class="auth-card">
+            <h1>登录以管理你的账号与课表识别</h1>
+            <form class="auth-form" id="login-form">
+              <div class="auth-method-switch" role="tablist" aria-label="登录方式">
+                <button class="active" type="button" data-login-method="email">邮箱登录</button>
+                <button type="button" data-login-method="code">登录码登录</button>
+              </div>
+
+              <div class="auth-method-panel active" data-login-panel="email">
+                <label class="auth-field">
+                  <input name="qqEmail" type="email" autocomplete="email" placeholder="QQ 邮箱" />
+                  <span>@</span>
+                </label>
+                <label class="auth-field">
+                  <input name="password" type="password" autocomplete="current-password" placeholder="密码" />
+                  <span>锁</span>
+                </label>
+                <div class="auth-row">
+                  <label><input type="checkbox" disabled />记住我</label>
+                  <a data-register-link href="/auth/register.html">注册新账号</a>
+                </div>
+              </div>
+
+              <div class="auth-method-panel" data-login-panel="code">
+                <label class="auth-field">
+                  <input name="loginCode" autocomplete="one-time-code" placeholder="登录码" />
+                  <span>码</span>
+                </label>
+                <div class="auth-row">
+                  <span>注册后生成的登录码可直接登录。</span>
+                </div>
+              </div>
+
+              <button class="auth-submit" type="submit">登录</button>
+              <div class="auth-status" id="login-status"></div>
+            </form>
+            <div class="auth-card-footer">
+              <a class="auth-alt-link" data-register-link href="/auth/register.html">还没有账号？注册</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const loginForm = document.querySelector("#login-form");
+      const loginStatus = document.querySelector("#login-status");
+      const methodButtons = document.querySelectorAll("[data-login-method]");
+      const methodPanels = document.querySelectorAll("[data-login-panel]");
+      let loginMethod = "email";
+
+      const redirectUrl = safeRedirect(new URLSearchParams(location.search).get("redirect") || "/user/index.html");
+
+      function safeRedirect(value) {
+        if (!value || !value.startsWith("/") || value.startsWith("//")) {
+          return "/user/index.html";
+        }
+        return value;
+      }
+
+      function withLoginCodeRedirect(url, loginCode) {
+        if (!loginCode) {
+          return url;
+        }
+        const target = new URL(url, location.origin);
+        if (target.pathname === "/user" || target.pathname === "/user/" || target.pathname === "/user/index.html") {
+          target.pathname = "/user/index.html";
+          target.searchParams.set("loginCode", loginCode);
+          return `${target.pathname}${target.search}${target.hash}`;
+        }
+        return url;
+      }
+
+      document.querySelectorAll("[data-register-link]").forEach((link) => {
+        link.href = `/auth/register.html?redirect=${encodeURIComponent(redirectUrl)}`;
+      });
+
+      methodButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          loginMethod = button.dataset.loginMethod;
+          methodButtons.forEach((item) => item.classList.toggle("active", item === button));
+          methodPanels.forEach((panel) => {
+            panel.classList.toggle("active", panel.dataset.loginPanel === loginMethod);
+          });
+          loginStatus.textContent = "";
+        });
+      });
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(loginForm);
+        loginStatus.textContent = "";
+        try {
+          const payload = loginMethod === "email"
+            ? {
+                qqEmail: data.get("qqEmail"),
+                password: data.get("password")
+              }
+            : {
+                loginCode: data.get("loginCode")
+              };
+          const response = await fetch("/api/v1/user/login", {
+            method: "POST",
+            cache: "no-store",
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (!response.ok || result.code !== 0) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+          }
+          if (result.data && result.data.loginCode) {
+            localStorage.setItem("clarkAamsLoginCode", result.data.loginCode);
+          }
+          const targetUrl = withLoginCodeRedirect(redirectUrl, result.data && result.data.loginCode);
+          window.location.replace(targetUrl);
+        } catch (error) {
+          loginStatus.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>

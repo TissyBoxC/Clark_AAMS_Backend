@@ -69,6 +69,13 @@
       display: grid;
       gap: 14px;
     }
+    label {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
     button, a.button {
       display: inline-flex;
       align-items: center;
@@ -145,6 +152,9 @@
       color: var(--text);
       background: var(--surface);
     }
+    .manual-json {
+      min-height: 220px;
+    }
     .actions {
       display: flex;
       gap: 10px;
@@ -187,6 +197,7 @@
       .bar { flex-direction: column; align-items: flex-start; }
     }
   </style>
+  <link rel="stylesheet" href="/admin/styles.css">
 </head>
 <body>
 <header>
@@ -209,6 +220,17 @@
       <button class="secondary" id="reloadButton" type="button">刷新</button>
     </div>
     <div class="panel-body">
+      <form id="manualCreateForm">
+        <label>
+          手动添加课程 JSON
+          <textarea class="manual-json" id="manualJsonText" spellcheck="false" placeholder='例如 [{"name":"高等数学","teacher":"张老师"}]'>[]</textarea>
+        </label>
+        <div class="actions">
+          <button type="submit">生成取件码</button>
+          <button class="secondary" id="formatManualJsonButton" type="button">格式化</button>
+        </div>
+        <div class="status" id="manualStatus">取件码将由后端随机分配。</div>
+      </form>
       <div class="status" id="listStatus">未加载</div>
       <div class="record-list" id="recordList"></div>
     </div>
@@ -231,18 +253,34 @@
   const detailStatus = document.querySelector('#detailStatus');
   const detailPanel = document.querySelector('#detailPanel');
   const reloadButton = document.querySelector('#reloadButton');
+  const manualCreateForm = document.querySelector('#manualCreateForm');
+  const manualJsonText = document.querySelector('#manualJsonText');
+  const manualStatus = document.querySelector('#manualStatus');
+  const formatManualJsonButton = document.querySelector('#formatManualJsonButton');
   let selectedCode = '';
   let records = [];
+
+  async function requestJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const text = await response.text();
+    let result = null;
+    if (text) {
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error(text);
+      }
+    }
+    if (!response.ok || (result && result.code !== 0)) {
+      throw new Error((result && result.message) || text || `HTTP ${response.status}`);
+    }
+    return result ? result.data : null;
+  }
 
   async function loadList() {
     setStatus(listStatus, '正在加载');
     try {
-      const response = await fetch('/api/v1/admin/course-pickups');
-      const result = await response.json();
-      if (!response.ok || result.code !== 0) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      records = result.data || [];
+      records = await requestJson('/api/v1/admin/course-pickups') || [];
       renderList();
       setStatus(listStatus, `${records.length} 条记录`);
       if (selectedCode && records.some((record) => record.code === selectedCode)) {
@@ -278,15 +316,31 @@
     renderList();
     setStatus(detailStatus, '正在加载');
     try {
-      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`);
-      const result = await response.json();
-      if (!response.ok || result.code !== 0) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      renderDetail(result.data);
+      const record = await requestJson(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`);
+      renderDetail(record);
       setStatus(detailStatus, '已加载');
     } catch (error) {
       setStatus(detailStatus, error.message, true);
+    }
+  }
+
+  async function createManualRecord(event) {
+    event.preventDefault();
+    setStatus(manualStatus, '正在生成取件码');
+    try {
+      const jsonText = manualJsonText.value.trim();
+      manualJsonText.value = JSON.stringify(JSON.parse(jsonText), null, 2);
+      const record = await requestJson('/api/v1/admin/course-pickups', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({jsonText: manualJsonText.value})
+      });
+      selectedCode = record.code;
+      setStatus(manualStatus, `已生成取件码 ${record.code}`);
+      await loadList();
+      await loadDetail(record.code);
+    } catch (error) {
+      setStatus(manualStatus, error.message, true);
     }
   }
 
@@ -333,11 +387,8 @@
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({jsonText})
       });
-      const result = await response.json();
-      if (!response.ok || result.code !== 0) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
-      renderDetail(result.data);
+      const record = await parseJsonResponse(response);
+      renderDetail(record);
       setStatus(detailStatus, '已保存');
     } catch (error) {
       setStatus(detailStatus, error.message, true);
@@ -350,11 +401,7 @@
     }
     setStatus(detailStatus, '正在删除');
     try {
-      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`, {method: 'DELETE'});
-      const result = await response.json();
-      if (!response.ok || result.code !== 0) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
+      await requestJson(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}`, {method: 'DELETE'});
       selectedCode = '';
       await loadList();
     } catch (error) {
@@ -368,16 +415,28 @@
     }
     setStatus(detailStatus, '正在删除图片');
     try {
-      const response = await fetch(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}/images/${encodeURIComponent(fileName)}`, {method: 'DELETE'});
-      const result = await response.json();
-      if (!response.ok || result.code !== 0) {
-        throw new Error(result.message || `HTTP ${response.status}`);
-      }
+      await requestJson(`/api/v1/admin/course-pickups/${encodeURIComponent(code)}/images/${encodeURIComponent(fileName)}`, {method: 'DELETE'});
       await loadDetail(code);
       await loadList();
     } catch (error) {
       setStatus(detailStatus, error.message, true);
     }
+  }
+
+  async function parseJsonResponse(response) {
+    const text = await response.text();
+    let result = null;
+    if (text) {
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error(text);
+      }
+    }
+    if (!response.ok || (result && result.code !== 0)) {
+      throw new Error((result && result.message) || text || `HTTP ${response.status}`);
+    }
+    return result ? result.data : null;
   }
 
   function formatJson(value) {
@@ -407,6 +466,15 @@
   }
 
   reloadButton.addEventListener('click', loadList);
+  manualCreateForm.addEventListener('submit', createManualRecord);
+  formatManualJsonButton.addEventListener('click', () => {
+    try {
+      manualJsonText.value = JSON.stringify(JSON.parse(manualJsonText.value), null, 2);
+      setStatus(manualStatus, '已格式化');
+    } catch (error) {
+      setStatus(manualStatus, error.message, true);
+    }
+  });
   loadList();
 </script>
 </body>

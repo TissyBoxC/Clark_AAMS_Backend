@@ -112,68 +112,122 @@
       .topline { flex-direction: column; align-items: flex-start; }
     }
   </style>
+  <link rel="stylesheet" href="/admin/styles.css">
 </head>
-<body>
-<header>
-  <div class="wrap">
-    <div class="topline">
+<body class="admin-dashboard-page">
+<div class="admin-dashboard-layout">
+  <main class="admin-dashboard-main">
+    <header class="admin-topbar">
       <div>
         <h1>Clark AAMS 管理台</h1>
-        <div class="subtle">学校适配器与客户端版本管理入口</div>
+        <p>学校适配器、客户端版本、AI 识别和取件码的统一后台入口。</p>
       </div>
       <span class="badge" id="healthBadge">检查中</span>
+    </header>
+
+    <div class="admin-dashboard-content">
+      <section class="admin-card admin-hero-card">
+        <div>
+          <p class="admin-eyebrow">Admin Console</p>
+          <h2>后台能力概览</h2>
+          <p>这里保留各模块当前状态，具体操作入口统一放在右侧菜单栏，避免首页重复出现跳转按钮。</p>
+        </div>
+        <div class="admin-summary-grid">
+          <div>
+            <span>服务状态</span>
+            <strong id="dashboardHealth">检查中</strong>
+          </div>
+          <div>
+            <span>取件码记录</span>
+            <strong id="dashboardPickups">加载中</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <div class="admin-card-head">
+          <h2>模块状态</h2>
+          <span>实时读取后台接口</span>
+        </div>
+        <div class="admin-status-grid">
+          <article class="admin-status-item">
+            <span>学校管理</span>
+            <strong id="schoolsState">加载中</strong>
+            <p>学校适配器与导入能力配置。</p>
+          </article>
+          <article class="admin-status-item">
+            <span>版本管理</span>
+            <strong id="latestVersion">加载中</strong>
+            <p>最低支持：<em id="minimumVersion">加载中</em></p>
+          </article>
+          <article class="admin-status-item">
+            <span>AI 识别配置</span>
+            <strong id="aiState">加载中</strong>
+            <p>视觉模型和 API Key 状态。</p>
+          </article>
+          <article class="admin-status-item">
+            <span>取件码管理</span>
+            <strong id="pickupState">加载中</strong>
+            <p>网页识别结果和原始图片管理。</p>
+          </article>
+        </div>
+      </section>
     </div>
-  </div>
-</header>
+  </main>
 
-<main>
-  <div class="grid">
-    <section class="panel">
-      <h2>学校管理</h2>
-      <p>查看现有学校适配器，并生成新的学校 scaffold。</p>
-      <div class="actions">
-        <a class="button" href="/admin/schools.html">进入学校界面</a>
+  <aside class="admin-sidebar" aria-label="管理台菜单">
+    <a class="admin-sidebar-head" href="/admin/index.html" aria-label="Clark AAMS 管理台">
+      <img src="/site/logo.png" alt="">
+      <strong>Clark AAMS</strong>
+    </a>
+    <div class="admin-profile-mini">
+      <span class="admin-avatar">ADM</span>
+      <div>
+        <span>当前区域</span>
+        <strong>后台管理</strong>
       </div>
-      <div class="status">
-        <div>接口：<span id="schoolsState">加载中</span></div>
+    </div>
+    <nav class="admin-side-nav">
+      <div class="admin-side-section">
+        <div class="admin-side-title">管理模块</div>
+        <a class="admin-side-link active" href="/admin/index.html">
+          <span class="admin-side-icon">HOME</span>
+          <span>概览</span>
+        </a>
+        <a class="admin-side-link" href="/admin/schools.html">
+          <span class="admin-side-icon">SCH</span>
+          <span>学校管理</span>
+        </a>
+        <a class="admin-side-link" href="/admin/versions.html">
+          <span class="admin-side-icon">VER</span>
+          <span>版本管理</span>
+        </a>
+        <a class="admin-side-link" href="/admin/ai.html">
+          <span class="admin-side-icon">AI</span>
+          <span>AI 识别配置</span>
+        </a>
+        <a class="admin-side-link" href="/admin/pickups.html">
+          <span class="admin-side-icon">JSON</span>
+          <span>取件码管理</span>
+        </a>
       </div>
-    </section>
-
-    <section class="panel">
-      <h2>版本管理</h2>
-      <p>维护客户端最新版本、最低支持版本、下载源和更新提示。</p>
-      <div class="actions">
-        <a class="button" href="/admin/versions.html">进入版本界面</a>
+      <div class="admin-side-section">
+        <div class="admin-side-title">站点</div>
+        <a class="admin-side-link" href="/">
+          <span class="admin-side-icon">SITE</span>
+          <span>项目主页</span>
+        </a>
+        <a class="admin-side-link" href="/api/index.html">
+          <span class="admin-side-icon">API</span>
+          <span>接口文档</span>
+        </a>
       </div>
-      <div class="status">
-        <div>最新版本：<span id="latestVersion">加载中</span></div>
-        <div>最低支持：<span id="minimumVersion">加载中</span></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>AI 识别配置</h2>
-      <p>配置视觉模型的 Base URL、API Key 和模型名，并测试课表图片识别。</p>
-      <div class="actions">
-        <a class="button" href="/admin/ai.html">进入 AI 配置</a>
-      </div>
-      <div class="status">
-        <div>接口：<span id="aiState">加载中</span></div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>取件码管理</h2>
-      <p>查看网页上传生成的取件码、课程 JSON 和原始图片。</p>
-      <div class="actions">
-        <a class="button" href="/admin/pickups.html">进入取件码管理</a>
-      </div>
-      <div class="status">
-        <div>记录：<span id="pickupState">加载中</span></div>
-      </div>
-    </section>
-  </div>
-</main>
+    </nav>
+    <div class="admin-sidebar-foot">
+      <span>Clark AAMS Backend</span>
+    </div>
+  </aside>
+</div>
 
 <script>
   const healthBadge = document.querySelector('#healthBadge');
@@ -182,6 +236,8 @@
   const minimumVersion = document.querySelector('#minimumVersion');
   const aiState = document.querySelector('#aiState');
   const pickupState = document.querySelector('#pickupState');
+  const dashboardHealth = document.querySelector('#dashboardHealth');
+  const dashboardPickups = document.querySelector('#dashboardPickups');
 
   async function load() {
     try {
@@ -199,9 +255,11 @@
 
       if (healthResponse.ok && healthResult.code === 0) {
         healthBadge.textContent = healthResult.data.status || 'UP';
+        dashboardHealth.textContent = healthResult.data.status || 'UP';
         healthBadge.classList.add('ok');
       } else {
         healthBadge.textContent = '异常';
+        dashboardHealth.textContent = '异常';
         healthBadge.classList.add('warn');
       }
 
@@ -222,11 +280,15 @@
 
       if (pickupResponse.ok && pickupResult.code === 0) {
         pickupState.textContent = `${pickupResult.data.length} 条`;
+        dashboardPickups.textContent = `${pickupResult.data.length} 条`;
       } else {
         pickupState.textContent = '不可用';
+        dashboardPickups.textContent = '不可用';
       }
     } catch (error) {
       healthBadge.textContent = '离线';
+      dashboardHealth.textContent = '离线';
+      dashboardPickups.textContent = '无法读取';
       healthBadge.classList.add('warn');
       schoolsState.textContent = error.message;
       latestVersion.textContent = '无法读取';

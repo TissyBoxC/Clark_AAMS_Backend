@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,11 @@ public class CoursePickupAdminController {
     public ApiResponse<CoursePickupRecordDto> get(@PathVariable String code) {
         return ApiResponse.ok(pickupStore.find(code)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "取件码不存在")));
+    }
+
+    @PostMapping
+    public ApiResponse<CoursePickupRecordDto> createManual(@RequestBody CoursePickupUpdateRequest request) {
+        return ApiResponse.ok(pickupStore.create(request == null ? null : request.jsonText(), List.of()));
     }
 
     @PutMapping("/{code}")

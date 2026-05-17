@@ -4,6 +4,8 @@ build/
 client-version.json
 ai-config.json
 admin-config.json
+email-config.json
+users.db
 course-pickups/
 *.log
 !gradle/wrapper/gradle-wrapper.jar
