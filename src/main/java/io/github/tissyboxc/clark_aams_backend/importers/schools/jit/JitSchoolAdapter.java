@@ -5,6 +5,7 @@ import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.CourseDto;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseRequest;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseResponse;
+import io.github.tissyboxc.clark_aams_backend.importers.dto.WeekPattern;
 import io.github.tissyboxc.clark_aams_backend.importers.schools.SchoolAdapter;
 import io.github.tissyboxc.clark_aams_backend.school.SchoolEntity;
 import org.springframework.stereotype.Component;
@@ -61,21 +62,19 @@ public class JitSchoolAdapter implements SchoolAdapter {
 
         List<CourseDto> courses = new ArrayList<>();
         for (JitJwxtParser.JitRawCourse rawCourse : rawCourses) {
-            List<Integer> weeks = rawCourse.weeks();
-            Integer startWeek = weeks.isEmpty() ? null : weeks.get(0);
-            Integer endWeek = weeks.isEmpty() ? null : weeks.get(weeks.size() - 1);
+            // 用离散周次反推「区间 + 单双周」，而不是简单取首末两项。
+            // 取首末项会把 1-3,5-16 压成 1..16、把 1-16(单) 压成 1..15。
+            WeekPattern pattern = WeekPattern.fromWeeks(rawCourse.weeks());
 
-            courses.add(new CourseDto(
+            courses.add(CourseDto.of(
                     rawCourse.name(),
-                    startWeek,
-                    endWeek,
                     rawCourse.day(),
                     rawCourse.startSection(),
                     rawCourse.endSection(),
                     rawCourse.position(),
                     rawCourse.teacher(),
-                    weeks,
-                    rawCourse.rawTime()
+                    rawCourse.rawTime(),
+                    pattern
             ));
         }
 

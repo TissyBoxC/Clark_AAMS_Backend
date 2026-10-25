@@ -1,6 +1,7 @@
 package io.github.tissyboxc.clark_aams_backend.importers.schools.jlu;
 
 import io.github.tissyboxc.clark_aams_backend.importers.dto.CourseDto;
+import io.github.tissyboxc.clark_aams_backend.importers.dto.WeekPattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -59,21 +60,17 @@ public final class JluParser {
 
             RoomInfo roomInfo = parseRoomText(roomText);
             List<Integer> weeks = parseWeeks(roomInfo.weeksPart());
-            Integer startWeek = weeks.isEmpty() ? null : weeks.get(0);
-            Integer endWeek = weeks.isEmpty() ? null : weeks.get(weeks.size() - 1);
             SectionInfo sectionInfo = parseSection(roomInfo.sectionPart());
 
-            courses.add(new CourseDto(
+            courses.add(CourseDto.of(
                     courseName,
-                    startWeek,
-                    endWeek,
                     day,
                     sectionInfo.startSection(),
                     sectionInfo.endSection(),
                     roomInfo.position(),
                     teacher,
-                    weeks,
-                    roomInfo.rawTime()
+                    roomInfo.rawTime(),
+                    WeekPattern.fromWeeks(weeks)
             ));
         }
 
