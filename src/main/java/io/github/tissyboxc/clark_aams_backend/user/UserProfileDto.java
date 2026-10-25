@@ -1,5 +1,7 @@
 package io.github.tissyboxc.clark_aams_backend.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * 用户资料。
  *
@@ -50,6 +52,14 @@ public record UserProfileDto(
         );
     }
 
+    /**
+     * 是否管理员。
+     *
+     * <p>用 {@code @JsonIgnore} 标注：Jackson 会把 {@code isAdmin()} 当成
+     * bean 属性 `admin` 序列化出去。对外已经用 `role` 表达身份，
+     * 多出的 `admin` 字段是冗余的，还会让前端误以为这是契约的一部分。
+     */
+    @JsonIgnore
     public boolean isAdmin() {
         return "admin".equalsIgnoreCase(role);
     }

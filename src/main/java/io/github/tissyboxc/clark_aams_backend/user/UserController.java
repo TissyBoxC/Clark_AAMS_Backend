@@ -1,5 +1,7 @@
 package io.github.tissyboxc.clark_aams_backend.user;
 
+import io.github.tissyboxc.clark_aams_backend.admin.AdminAuthController;
+
 import io.github.tissyboxc.clark_aams_backend.common.ApiResponse;
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
@@ -36,15 +38,29 @@ public class UserController {
     public ApiResponse<UserProfileDto> register(@RequestBody UserRegisterRequest request, HttpServletRequest httpRequest) {
         UserProfileDto user = userAccountService.register(request);
         HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(SESSION_KEY, user.id());
+        establishUserIdentity(session, user.id());
         return ApiResponse.ok(user);
+    }
+
+    /**
+     * 在一个会话里建立普通用户身份（P1-1）。
+     *
+     * <p>必须同时清掉管理员标记：账号表合并后两种身份共用一个会话，
+     * 若设置其一而不清理另一个，同一浏览器里会出现两个身份并存——
+     * 而 `/auth/me` 优先判管理员，于是「管理员登录后，同一浏览器
+     * 再注册的普通用户」会直接继承管理员权限。这是真实的越权路径。
+     */
+    private void establishUserIdentity(HttpSession session, long userId) {
+        session.setAttribute(SESSION_KEY, userId);
+        session.removeAttribute(AdminAuthController.SESSION_KEY);
+        session.removeAttribute(AdminAuthController.SESSION_USERNAME_KEY);
     }
 
     @PostMapping("/login")
     public ApiResponse<UserLoginResponse> login(@RequestBody UserLoginRequest request, HttpServletRequest httpRequest) {
         UserProfileDto user = userAccountService.login(request);
         HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(SESSION_KEY, user.id());
+        establishUserIdentity(session, user.id());
         return ApiResponse.ok(new UserLoginResponse(
                 user.id(),
                 user.username(),

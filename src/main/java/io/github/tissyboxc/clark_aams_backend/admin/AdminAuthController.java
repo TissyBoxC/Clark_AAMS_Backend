@@ -3,6 +3,7 @@ package io.github.tissyboxc.clark_aams_backend.admin;
 import io.github.tissyboxc.clark_aams_backend.common.ApiResponse;
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
+import io.github.tissyboxc.clark_aams_backend.user.UserController;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -45,8 +46,7 @@ public class AdminAuthController {
         }
         credentialStore.register(request.username(), request.password());
         HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(SESSION_KEY, Boolean.TRUE);
-        session.setAttribute(SESSION_USERNAME_KEY, request.username());
+        establishAdminIdentity(session, request.username());
         return ApiResponse.ok(Map.of("authenticated", true));
     }
 
@@ -61,9 +61,21 @@ public class AdminAuthController {
         }
 
         HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(SESSION_KEY, Boolean.TRUE);
-        session.setAttribute(SESSION_USERNAME_KEY, request.username());
+        establishAdminIdentity(session, request.username());
         return ResponseEntity.ok(ApiResponse.ok(Map.of("authenticated", true)));
+    }
+
+    /**
+     * 在一个会话里建立管理员身份（P1-1）。
+     *
+     * <p>与 `UserController#establishUserIdentity` 对称：设置管理员标记时
+     * 必须清掉普通用户标记，否则两种身份会共存在同一会话里，
+     * 导致「先登录用户、再登录管理员」后身份判定出现歧义。
+     */
+    private void establishAdminIdentity(HttpSession session, String username) {
+        session.setAttribute(SESSION_KEY, Boolean.TRUE);
+        session.setAttribute(SESSION_USERNAME_KEY, username);
+        session.removeAttribute(UserController.SESSION_KEY);
     }
 
     @PostMapping("/logout")
