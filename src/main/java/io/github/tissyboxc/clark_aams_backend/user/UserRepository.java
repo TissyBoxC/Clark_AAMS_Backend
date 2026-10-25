@@ -29,6 +29,17 @@ public interface UserRepository {
 
     Optional<UserRecord> findByUsernameAndPassword(String username, String passwordHash);
 
+    /**
+     * 按用户名查记录（不校验密码）。
+     *
+     * <p>加盐散列之后，密码无法在 SQL 层比较——盐是每条记录各自的，
+     * 必须先取出记录、用它的盐重算散列再比对。
+     */
+    Optional<UserRecord> findByUsername(String username);
+
+    /** 更新指定用户的密码散列（用于历史散列的机会式升级）。 */
+    void updatePasswordHash(long id, String passwordHash);
+
     Optional<UserRecord> findByLoginCode(String loginCode);
 
     Optional<UserRecord> findByEmail(String email);

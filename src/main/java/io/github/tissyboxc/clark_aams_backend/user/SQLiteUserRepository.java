@@ -177,6 +177,33 @@ public class SQLiteUserRepository implements UserRepository {
     }
 
     @Override
+    public synchronized Optional<UserRecord> findByUsername(String username) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "select * from users where username = ?")) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return readOne(resultSet);
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to query user by username", exception);
+        }
+    }
+
+    @Override
+    public synchronized void updatePasswordHash(long id, String passwordHash) {
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "update users set password_hash = ? where id = ?")) {
+            statement.setString(1, passwordHash);
+            statement.setLong(2, id);
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to update password hash", exception);
+        }
+    }
+
+    @Override
     public synchronized Optional<UserRecord> findByEmail(String email) {
         return queryOne("select * from users where email = ?", email);
     }

@@ -6,9 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.HexFormat;
 
 @Service
 public class UserAccountService {
@@ -28,6 +26,8 @@ public class UserAccountService {
     private final UserRepository userRepository;
     private final SecureRandom secureRandom = new SecureRandom();
 
+    private final PasswordHasher passwordHasher = new PasswordHasher();
+
     public UserAccountService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -46,7 +46,7 @@ public class UserAccountService {
         UserRepository.UserRecord record = new UserRepository.UserRecord(
                 0L,
                 username,
-                hashPassword(password),
+                passwordHasher.hash(password),
                 email,
                 generateUniqueLoginCode(),
                 false,
@@ -73,22 +73,30 @@ public class UserAccountService {
         }
 
         String email = normalizeEmail(request.qqEmail());
+        String username = normalize(request.username());
         String password = normalize(request.password());
-        if (!email.isBlank() || !password.isBlank()) {
-            if (email.isBlank() || password.isBlank()) {
+
+        // 分支判断必须看「邮箱是否给了」，而不是「邮箱或密码是否有值」。
+        // 原条件是 `!email.isBlank() || !password.isBlank()`：只要传了密码
+        // 就会进邮箱分支，随后因 email 为空报「请输入 QQ 邮箱和密码」——
+        // 用户名 + 密码的登录路径实际上是**不可达**的死代码。
+        if (!email.isBlank()) {
+            if (password.isBlank()) {
                 throw new BusinessException(ErrorCode.LOGIN_INVALID, "请输入 QQ 邮箱和密码");
             }
             return userRepository.findByEmail(email)
-                    .filter(record -> constantTimeEquals(record.passwordHash(), hashPassword(password)))
+                    .filter(record -> passwordHasher.matches(password, record.passwordHash()))
+                    .map(record -> upgradeLegacyHashIfNeeded(record, password))
                     .map(this::toProfile)
                     .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_INVALID, "QQ 邮箱或密码错误"));
         }
 
-        String username = normalize(request.username());
         if (username.isBlank() || password.isBlank()) {
             throw new BusinessException(ErrorCode.LOGIN_INVALID, "请输入登录码，或输入 QQ 邮箱和密码");
         }
-        return userRepository.findByUsernameAndPassword(username, hashPassword(password))
+        return userRepository.findByUsername(username)
+                .filter(record -> passwordHasher.matches(password, record.passwordHash()))
+                .map(record -> upgradeLegacyHashIfNeeded(record, password))
                 .map(this::toProfile)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_INVALID, "用户名或密码错误"));
     }
@@ -265,14 +273,28 @@ public class UserAccountService {
         return builder.toString();
     }
 
-    private String hashPassword(String password) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashed = digest.digest(normalize(password).getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hashed);
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("Failed to hash password", exception);
+    /**
+     * 机会式升级历史散列（P1-1）。
+     *
+     * <p>老账号的散列是单次无盐 SHA-256。不清库、不停机，而是在用户
+     * **本次登录已经验证通过**之后，顺手把库里的散列换成加盐 PBKDF2。
+     * 理由是此刻明文密码就在内存里，不需要用户做任何事。
+     *
+     * <p>用户活跃度决定了升级覆盖率：常用账号几周内会全部换掉，
+     * 长期不登录的账号保持旧格式（它们本来也没有新的泄漏面）。
+     */
+    private UserRepository.UserRecord upgradeLegacyHashIfNeeded(
+            UserRepository.UserRecord record, String password) {
+        if (!passwordHasher.needsUpgrade(record.passwordHash())) {
+            return record;
         }
+        String upgraded = passwordHasher.hash(password);
+        userRepository.updatePasswordHash(record.id(), upgraded);
+        return new UserRepository.UserRecord(
+                record.id(), record.username(), upgraded, record.email(),
+                record.loginCode(), record.emailBound(), record.emailVerified(),
+                record.emailVerifyCode(), record.questionAnalysisCount(),
+                record.loginCodeIssuedAt());
     }
 
     private boolean constantTimeEquals(String left, String right) {
