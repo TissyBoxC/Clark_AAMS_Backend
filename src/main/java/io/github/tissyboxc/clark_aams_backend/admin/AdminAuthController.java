@@ -18,7 +18,9 @@ import java.util.Map;
 @RestController
 @RequestMapping(value = "/api/v1/admin/auth", produces = "application/json;charset=UTF-8")
 public class AdminAuthController {
-    static final String SESSION_KEY = "CLARK_AAMS_ADMIN_AUTHENTICATED";
+    public static final String SESSION_KEY = "CLARK_AAMS_ADMIN_AUTHENTICATED";
+    /** 当前管理员账号名，供 `/auth/me` 展示；不存密码或哈希。 */
+    public static final String SESSION_USERNAME_KEY = "CLARK_AAMS_ADMIN_USERNAME";
     private final AdminCredentialStore credentialStore;
 
     public AdminAuthController(AdminCredentialStore credentialStore) {
@@ -44,6 +46,7 @@ public class AdminAuthController {
         credentialStore.register(request.username(), request.password());
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute(SESSION_KEY, Boolean.TRUE);
+        session.setAttribute(SESSION_USERNAME_KEY, request.username());
         return ApiResponse.ok(Map.of("authenticated", true));
     }
 
@@ -59,6 +62,7 @@ public class AdminAuthController {
 
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute(SESSION_KEY, Boolean.TRUE);
+        session.setAttribute(SESSION_USERNAME_KEY, request.username());
         return ResponseEntity.ok(ApiResponse.ok(Map.of("authenticated", true)));
     }
 
