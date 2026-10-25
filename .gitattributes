@@ -1,3 +1,16 @@
-/gradlew text eol=lf
-*.bat text eol=crlf
+* text=auto eol=lf
+
+# 契约基准数据：换行符必须逐字节固定。
+# 它被 App 与 Web 共用，两端测试会比对内容摘要；
+# 若 checkout 时被 autocrlf 改写成 CRLF，摘要就会不一致。
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# 二进制/生成物不做换行转换
+*.apk binary
 *.jar binary
+*.png binary
+*.jpg binary
+*.ttf binary
+*.otf binary
