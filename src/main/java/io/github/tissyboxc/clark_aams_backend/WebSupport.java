@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,44 +20,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.IOException;
 import java.util.Map;
-
-@Controller
-class PageController {
-    @GetMapping({"/admin", "/admin/"})
-    String admin() {
-        return "redirect:/admin/index.html";
-    }
-
-    @GetMapping({"/api", "/api/", "/api.html"})
-    String api() {
-        return "redirect:/api/index.html";
-    }
-
-    @GetMapping({"/user", "/user/", "/user.html", "/my", "/my/", "/my.html"})
-    String user() {
-        return "redirect:/user/index.html";
-    }
-
-    @GetMapping({"/login", "/login/"})
-    String login() {
-        return "redirect:/auth/login.html";
-    }
-
-    @GetMapping({"/register", "/register/"})
-    String register() {
-        return "redirect:/auth/register.html";
-    }
-
-    @GetMapping({"/recognize", "/recognize/", "/recognize.html"})
-    String recognize() {
-        return "redirect:/user/index.html#recognize";
-    }
-
-    @GetMapping("/favicon.ico")
-    String favicon() {
-        return "forward:/site/favicon.ico";
-    }
-}
 
 @RestController
 @RequestMapping(value = "/api/v1", produces = "application/json;charset=UTF-8")
@@ -81,13 +42,15 @@ class HealthController {
 @Configuration
 class CorsConfig {
     @Bean
-    WebMvcConfigurer webMvcConfigurer() {
+    WebMvcConfigurer webMvcConfigurer(
+            @Value("${clark-aams.cors.allowed-origin-patterns:*}") String[] allowedOriginPatterns
+    ) {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOriginPatterns("*")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedOriginPatterns(allowedOriginPatterns)
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true)
                         .maxAge(3600);

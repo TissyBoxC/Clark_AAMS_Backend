@@ -10,16 +10,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.web.cors.CorsUtils;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 @Component
 @Order(1)
 public class AdminAuthFilter implements Filter {
-    private static final String LOGIN_PAGE = "/admin/login.html";
-    private static final String REGISTER_PAGE = "/admin/register.html";
     private static final String ADMIN_AUTH_API_PREFIX = "/api/v1/admin/auth/";
     private static final String ADMIN_API_PREFIX = "/api/v1/admin/";
 
@@ -36,49 +34,31 @@ public class AdminAuthFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         String path = normalizePath(httpRequest);
 
-        if (!credentialStore.configured() && requiresSetupRedirect(path)) {
-            httpResponse.sendRedirect(REGISTER_PAGE);
-            return;
-        }
-
-        if (!requiresAuthentication(path) || isAuthenticated(httpRequest)) {
+        if (CorsUtils.isPreFlightRequest(httpRequest)) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (isAdminApi(path)) {
-            writeUnauthorizedJson(httpResponse);
+        if (!isProtectedAdminApi(path)) {
+            chain.doFilter(request, response);
             return;
         }
 
-        httpResponse.sendRedirect(LOGIN_PAGE + "?redirect=" + encodeRedirect(httpRequest));
-    }
-
-    private boolean requiresAuthentication(String path) {
-        if (path.equals(LOGIN_PAGE)
-                || path.equals(REGISTER_PAGE)
-                || path.startsWith(ADMIN_AUTH_API_PREFIX)) {
-            return false;
+        if (!credentialStore.configured()) {
+            writeUnauthorizedJson(httpRequest, httpResponse, 40102, "后台管理员尚未初始化");
+            return;
         }
-        return path.equals("/admin")
-                || path.equals("/admin/")
-                || path.startsWith("/admin/")
-                || isAdminApi(path);
+
+        if (isAuthenticated(httpRequest)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        writeUnauthorizedJson(httpRequest, httpResponse, 40101, "请先登录后台管理");
     }
 
-    private boolean isAdminApi(String path) {
+    private boolean isProtectedAdminApi(String path) {
         return path.startsWith(ADMIN_API_PREFIX) && !path.startsWith(ADMIN_AUTH_API_PREFIX);
-    }
-
-    private boolean requiresSetupRedirect(String path) {
-        if (path.equals(REGISTER_PAGE) || path.startsWith(ADMIN_AUTH_API_PREFIX)) {
-            return false;
-        }
-        return path.equals(LOGIN_PAGE)
-                || path.equals("/admin")
-                || path.equals("/admin/")
-                || path.startsWith("/admin/")
-                || isAdminApi(path);
     }
 
     private boolean isAuthenticated(HttpServletRequest request) {
@@ -95,18 +75,30 @@ public class AdminAuthFilter implements Filter {
         return uri.substring(contextPath.length());
     }
 
-    private String encodeRedirect(HttpServletRequest request) {
-        String target = normalizePath(request);
-        if (request.getQueryString() != null && !request.getQueryString().isBlank()) {
-            target += "?" + request.getQueryString();
-        }
-        return URLEncoder.encode(target, StandardCharsets.UTF_8);
-    }
-
-    private void writeUnauthorizedJson(HttpServletResponse response) throws IOException {
+    private void writeUnauthorizedJson(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            int code,
+            String message
+    ) throws IOException {
+        addCorsHeadersIfNeeded(request, response);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":40101,\"message\":\"请先登录后台管理\",\"data\":null}");
+        response.getWriter().write("{\"code\":" + code + ",\"message\":\"" + message + "\",\"data\":null}");
+    }
+
+    private void addCorsHeadersIfNeeded(HttpServletRequest request, HttpServletResponse response) {
+        String origin = response.getHeader("Access-Control-Allow-Origin");
+        if (origin != null && !origin.isBlank()) {
+            return;
+        }
+        String requestOrigin = request.getHeader("Origin");
+        if (requestOrigin == null || requestOrigin.isBlank()) {
+            return;
+        }
+        response.setHeader("Access-Control-Allow-Origin", requestOrigin);
+        response.setHeader("Vary", "Origin");
+        response.setHeader("Access-Control-Allow-Credentials", "true");
     }
 }

@@ -4,6 +4,7 @@ import io.github.tissyboxc.clark_aams_backend.common.ApiResponse;
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +30,12 @@ public class AppVersionAdminController {
         return ApiResponse.ok(configStore.save(request));
     }
 
+    @PatchMapping("/config")
+    public ApiResponse<AppVersionConfigDto> patchConfig(@RequestBody AppVersionPatchRequest request) {
+        validate(request);
+        return ApiResponse.ok(configStore.patch(request));
+    }
+
     private void validate(AppVersionUpdateRequest request) {
         if (request == null
                 || normalize(request.latestVersion()).isBlank()
@@ -41,6 +48,32 @@ public class AppVersionAdminController {
         }
         SemanticVersion.parse(request.latestVersion());
         SemanticVersion.parse(request.minimumSupportedVersion());
+    }
+
+    private void validate(AppVersionPatchRequest request) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        validateOptionalVersion(request.latestVersion());
+        validateOptionalVersion(request.minimumSupportedVersion());
+        validateOptionalBuild(request.latestBuild());
+        validateOptionalBuild(request.minimumSupportedBuild());
+    }
+
+    private void validateOptionalVersion(String version) {
+        if (version == null) {
+            return;
+        }
+        if (normalize(version).isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        SemanticVersion.parse(version);
+    }
+
+    private void validateOptionalBuild(Integer build) {
+        if (build != null && build < 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
     }
 
     private String normalize(String value) {

@@ -2,7 +2,7 @@ package io.github.tissyboxc.clark_aams_backend.school;
 
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
-import io.github.tissyboxc.clark_aams_backend.importers.schools.SchoolConfigProvider;
+import io.github.tissyboxc.clark_aams_backend.importers.schools.SchoolAdapterRegistry;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,9 +39,8 @@ public class SchoolService {
 
     private final Map<String, SchoolEntity> schools;
 
-    public SchoolService(List<SchoolConfigProvider> schoolConfigProviders) {
-        this.schools = schoolConfigProviders.stream()
-                .map(SchoolConfigProvider::school)
+    public SchoolService(SchoolAdapterRegistry schoolAdapterRegistry) {
+        this.schools = schoolAdapterRegistry.listSchools().stream()
                 .collect(Collectors.toUnmodifiableMap(
                         school -> school.id().toLowerCase(Locale.ROOT),
                         Function.identity()
@@ -51,6 +50,7 @@ public class SchoolService {
     public List<SchoolDto> listEnabledSchools() {
         return schools.values().stream()
                 .filter(SchoolEntity::enabled)
+                .sorted((left, right) -> sortKey(left).compareTo(sortKey(right)))
                 .map(this::toDto)
                 .toList();
     }
@@ -95,6 +95,11 @@ public class SchoolService {
 
     private String normalize(String schoolId) {
         return schoolId == null ? "" : schoolId.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String sortKey(SchoolEntity school) {
+        String id = normalize(school.id());
+        return "jit".equals(id) ? "0-" + id : "1-" + id;
     }
 
     private String normalizeProfile(String profile) {

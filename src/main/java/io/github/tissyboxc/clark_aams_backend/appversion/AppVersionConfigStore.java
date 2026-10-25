@@ -61,6 +61,26 @@ public class AppVersionConfigStore {
         return saved;
     }
 
+    public synchronized AppVersionConfigDto patch(AppVersionPatchRequest request) {
+        AppVersionConfigDto current = snapshot();
+        AppVersionConfigDto config = new AppVersionConfigDto(
+                request.latestVersion() != null ? normalize(request.latestVersion()) : current.latestVersion(),
+                request.latestBuild() != null ? request.latestBuild() : current.latestBuild(),
+                request.minimumSupportedVersion() != null ? normalize(request.minimumSupportedVersion()) : current.minimumSupportedVersion(),
+                request.minimumSupportedBuild() != null ? request.minimumSupportedBuild() : current.minimumSupportedBuild(),
+                request.title() != null ? normalize(request.title()) : current.title(),
+                request.optionalUpdateMessage() != null ? normalize(request.optionalUpdateMessage()) : current.optionalUpdateMessage(),
+                request.requiredUpdateMessage() != null ? normalize(request.requiredUpdateMessage()) : current.requiredUpdateMessage(),
+                request.releasePageUrl() != null ? normalize(request.releasePageUrl()) : current.releasePageUrl(),
+                request.releaseNotes() != null ? normalizeNotes(request.releaseNotes()) : current.releaseNotes(),
+                request.downloadSources() != null ? normalizeDownloadSources(request.downloadSources()) : current.downloadSources()
+        );
+        apply(config);
+        AppVersionConfigDto saved = snapshot();
+        writeConfig(configPath, saved);
+        return saved;
+    }
+
     public Path configPath() {
         return configPath;
     }

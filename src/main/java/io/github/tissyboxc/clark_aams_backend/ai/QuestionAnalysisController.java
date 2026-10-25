@@ -40,6 +40,19 @@ public class QuestionAnalysisController {
         return ApiResponse.ok(result);
     }
 
+    @PostMapping("/analyze/fill-blank")
+    public ApiResponse<Map<String, Object>> analyzeFillBlank(
+            @RequestBody Map<String, Object> request,
+            HttpServletRequest httpRequest) {
+        long userId = requireCurrentUserId(httpRequest);
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "Request body is required");
+        }
+        Map<String, Object> result = analysisService.analyzeFillBlank(request);
+        userAccountService.incrementQuestionAnalysisCount(userId);
+        return ApiResponse.ok(result);
+    }
+
     private long requireCurrentUserId(HttpServletRequest request) {
         Long id = currentUserId(request);
         if (id == null) {

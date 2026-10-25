@@ -20,7 +20,6 @@ import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = WebEnvironment.MOCK)
@@ -31,10 +30,10 @@ class AdminFirstRunTests {
     private MockMvc mockMvc;
 
     @Test
-    void firstAdminVisitRedirectsToRegistrationUntilAdminIsCreated() throws Exception {
-        mockMvc.perform(get("/admin"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/register.html"));
+    void adminApisRequireSetupUntilAdminIsCreated() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/app-version/config"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(40102));
 
         mockMvc.perform(get("/api/v1/admin/auth/setup"))
                 .andExpect(status().isOk())
@@ -54,9 +53,14 @@ class AdminFirstRunTests {
                 .andReturn();
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
 
-        mockMvc.perform(get("/admin").session(session))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/index.html"));
+        mockMvc.perform(get("/api/v1/admin/auth/setup"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.configured").value(true))
+                .andExpect(jsonPath("$.data.registrationAvailable").value(false));
+
+        mockMvc.perform(get("/api/v1/admin/app-version/config").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
     }
 
     static class PropertiesInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {

@@ -20,10 +20,16 @@ public class UserController {
 
     private final UserAccountService userAccountService;
     private final EmailCodeSender emailCodeSender;
+    private final EmailCodeCooldownService emailCodeCooldownService;
 
-    public UserController(UserAccountService userAccountService, EmailCodeSender emailCodeSender) {
+    public UserController(
+            UserAccountService userAccountService,
+            EmailCodeSender emailCodeSender,
+            EmailCodeCooldownService emailCodeCooldownService
+    ) {
         this.userAccountService = userAccountService;
         this.emailCodeSender = emailCodeSender;
+        this.emailCodeCooldownService = emailCodeCooldownService;
     }
 
     @PostMapping("/register")
@@ -66,9 +72,17 @@ public class UserController {
 
     @PostMapping("/email/code")
     public ApiResponse<UserProfileDto> requestEmailCode(@RequestBody UserEmailCodeRequest request, HttpServletRequest httpRequest) {
-        UserAccountService.EmailChallenge challenge = userAccountService.requestEmailChallenge(requireCurrentUserId(httpRequest), request.qqEmail());
-        emailCodeSender.sendVerificationCode(challenge.user().email(), challenge.code());
-        return ApiResponse.ok(challenge.user());
+        long userId = requireCurrentUserId(httpRequest);
+        EmailCodeCooldownService.CooldownTicket cooldownTicket = emailCodeCooldownService.reserve(userId);
+        try {
+            UserAccountService.EmailChallenge challenge =
+                    userAccountService.requestEmailChallenge(userId, request.qqEmail());
+            emailCodeSender.sendVerificationCode(challenge.user().email(), challenge.code());
+            return ApiResponse.ok(challenge.user());
+        } catch (RuntimeException exception) {
+            emailCodeCooldownService.release(cooldownTicket);
+            throw exception;
+        }
     }
 
     @PostMapping("/email/verify")
@@ -125,6 +139,9 @@ public class UserController {
 
     private long requireCurrentUserId(HttpServletRequest request) {
         Long id = currentUserId(request);
+        if (id == null) {
+            id = restoreUserIdFromLoginCodeHeader(request);
+        }
         if (id == null) {
             throw new BusinessException(ErrorCode.LOGIN_INVALID, "请先登录");
         }

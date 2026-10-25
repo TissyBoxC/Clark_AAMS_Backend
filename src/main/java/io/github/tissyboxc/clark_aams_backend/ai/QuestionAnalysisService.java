@@ -18,12 +18,15 @@ import java.util.Map;
 @Service
 public class QuestionAnalysisService {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(120);
-    private static final String SYSTEM_PROMPT = """
+    private static final String OBJECTIVE_SYSTEM_PROMPT = """
             You are a learning assistant used only for self-study, review, and question analysis.
             The user will provide question_type, question_content, and options.
+            This endpoint is only for single-choice, multiple-choice, and true/false questions.
             Analyze the knowledge points, explain why each option may be correct or wrong,
             give concise solving steps, and return the final option letter.
             Return only one valid JSON object. Do not include markdown, code fences, or extra text.
+            Do not ask follow-up questions. Do not offer extra help. Do not output phrases such as
+            "你还需要我", "如果你需要", "是否需要", or any similar conversational ending.
             The JSON object must use exactly these fields:
             {
               "question_type": "question type",
@@ -36,6 +39,44 @@ public class QuestionAnalysisService {
                 "D": "analysis for option D"
               },
               "answer": "final option letters, for example A or AC",
+              "study_hint": "short study hint"
+            }
+            Use Chinese for the field values when the question is in Chinese.
+            """;
+    private static final String FILL_BLANK_SYSTEM_PROMPT = """
+            You are a learning assistant used only for self-study, review, and question analysis.
+            The user will provide a fill-in-the-blank style question. This includes fill-in,
+            material-analysis, short-answer, and essay/discussion questions.
+            The user may provide question_type, question_content, material, reference_answer,
+            student_answer, or other context fields. Options may be absent and must not be required.
+
+            Your task:
+            1. Read the material and question carefully.
+            2. Extract knowledge points and scoring points.
+            3. Give concise solving steps.
+            4. Produce a direct answer suitable for filling into the answer area.
+            5. If the provided information is insufficient, do not ask the user for more details.
+               Put "无法确定" in answer, describe the missing information in missing_info, and still return JSON.
+            6. If the question clearly contains multiple blanks or sub-questions, such as "(1)(2)",
+               "（1）（2）", "1.", "2.", "1、", "2、", or similar numbered answer slots,
+               the answer field must explicitly label each sub-answer as 第一小题, 第二小题, etc.
+               Different sub-answers must be separated with "(1CLARK)", "(2CLARK)", "(3CLARK)" in order.
+               This is mandatory. Do not merge multiple sub-answers into one paragraph without these CLARK separators.
+
+            Return only one valid JSON object. Do not include markdown, code fences, explanations outside JSON,
+            greetings, apologies, follow-up questions, or extra conversational text.
+            Strictly avoid phrases such as "你还需要我", "如果你需要", "是否需要", "我可以继续",
+            "需要的话", and any similar offer to continue.
+
+            The JSON object must use exactly these fields:
+            {
+              "question_type": "question type",
+              "knowledge_points": ["knowledge point"],
+              "thinking_steps": ["step"],
+              "answer": "direct final answer",
+              "answer_analysis": "brief explanation for the answer",
+              "scoring_points": ["key point that should appear in the answer"],
+              "missing_info": ["missing information, empty array when enough information is available"],
               "study_hint": "short study hint"
             }
             Use Chinese for the field values when the question is in Chinese.
@@ -75,8 +116,42 @@ public class QuestionAnalysisService {
         userPrompt.put("question_content", String.valueOf(questionContent).trim());
         userPrompt.put("options", options);
 
+        return requestAnalysis(config, OBJECTIVE_SYSTEM_PROMPT, userPrompt);
+    }
+
+    public Map<String, Object> analyzeFillBlank(Map<String, Object> request) {
+        Object questionType = firstPresent(request, "question_type", "questionType", "type");
+        Object questionContent = firstPresent(request, "question_content", "questionContent", "content", "stem");
+        Object material = firstPresent(request, "material", "materials", "question_material", "questionMaterial", "context", "passage");
+        Object referenceAnswer = firstPresent(request, "reference_answer", "referenceAnswer", "standard_answer", "standardAnswer");
+        Object studentAnswer = firstPresent(request, "student_answer", "studentAnswer", "user_answer", "userAnswer");
+
+        if (blank(questionContent)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "question_content is required");
+        }
+
+        AiRuntimeConfig config = configStore.runtimeConfig();
+        if (!config.ready()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "AI config is incomplete");
+        }
+
+        Map<String, Object> userPrompt = new LinkedHashMap<>();
+        userPrompt.put("question_type", blank(questionType) ? "fill_blank" : String.valueOf(questionType).trim());
+        userPrompt.put("question_content", String.valueOf(questionContent).trim());
+        putIfPresent(userPrompt, "material", material);
+        putIfPresent(userPrompt, "reference_answer", referenceAnswer);
+        putIfPresent(userPrompt, "student_answer", studentAnswer);
+        userPrompt.put("raw_request", request);
+
+        return requestAnalysis(config, FILL_BLANK_SYSTEM_PROMPT, userPrompt);
+    }
+
+    private Map<String, Object> requestAnalysis(
+            AiRuntimeConfig config,
+            String systemPrompt,
+            Map<String, Object> userPrompt) {
         try {
-            String requestBody = objectMapper.writeValueAsString(buildRequest(config, userPrompt));
+            String requestBody = objectMapper.writeValueAsString(buildRequest(config, systemPrompt, userPrompt));
             HttpRequest httpRequest = HttpRequest.newBuilder(chatCompletionsUri(config.baseUrl()))
                     .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", "Bearer " + config.apiKey())
@@ -98,11 +173,14 @@ public class QuestionAnalysisService {
         }
     }
 
-    private Map<String, Object> buildRequest(AiRuntimeConfig config, Map<String, Object> userPrompt) throws IOException {
+    private Map<String, Object> buildRequest(
+            AiRuntimeConfig config,
+            String systemPrompt,
+            Map<String, Object> userPrompt) throws IOException {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", config.model());
         body.put("messages", List.of(
-                Map.of("role", "system", "content", SYSTEM_PROMPT),
+                Map.of("role", "system", "content", systemPrompt),
                 Map.of("role", "user", "content", objectMapper.writeValueAsString(userPrompt))
         ));
         body.put("temperature", 0.2);
@@ -216,5 +294,11 @@ public class QuestionAnalysisService {
 
     private boolean blank(Object value) {
         return value == null || String.valueOf(value).isBlank();
+    }
+
+    private void putIfPresent(Map<String, Object> target, String key, Object value) {
+        if (!blank(value)) {
+            target.put(key, value);
+        }
     }
 }

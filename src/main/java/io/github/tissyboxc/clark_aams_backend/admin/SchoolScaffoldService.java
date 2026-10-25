@@ -29,12 +29,11 @@ public class SchoolScaffoldService {
         Path expectedBase = SCHOOL_BASE_DIR.toAbsolutePath().normalize();
         Path targetDir = packageDir.toAbsolutePath().normalize();
         if (!targetDir.startsWith(expectedBase)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "学校 ID 不合法");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "invalid school id");
         }
 
         List<GeneratedFile> generatedFiles = List.of(
-                new GeneratedFile(data.classPrefix() + "SchoolConfig.java", schoolConfigTemplate(data)),
-                new GeneratedFile(data.classPrefix() + "CourseImporter.java", importerTemplate(data)),
+                new GeneratedFile(data.classPrefix() + "SchoolAdapter.java", adapterTemplate(data)),
                 new GeneratedFile(data.classPrefix() + "Client.java", clientTemplate(data)),
                 new GeneratedFile(data.classPrefix() + "Parser.java", parserTemplate(data))
         );
@@ -46,13 +45,13 @@ public class SchoolScaffoldService {
             for (GeneratedFile generatedFile : generatedFiles) {
                 Path file = packageDir.resolve(generatedFile.fileName());
                 if (Files.exists(file) && !overwrite) {
-                    throw new BusinessException(ErrorCode.BAD_REQUEST, "文件已存在：" + file);
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "file already exists: " + file);
                 }
                 Files.writeString(file, generatedFile.content(), StandardCharsets.UTF_8);
                 createdFiles.add(file.toAbsolutePath().normalize().toString());
             }
         } catch (IOException exception) {
-            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "生成学校代码失败", exception);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "failed to generate school scaffold", exception);
         }
 
         return new SchoolScaffoldResponse(
@@ -69,7 +68,7 @@ public class SchoolScaffoldService {
         }
         String schoolId = safeTrim(request.schoolId()).toLowerCase(Locale.ROOT);
         if (!SCHOOL_ID_PATTERN.matcher(schoolId).matches()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "学校 ID 只能使用小写字母、数字、下划线，且必须以字母开头");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "invalid schoolId");
         }
 
         String classPrefix = safeTrim(request.classPrefix());
@@ -77,18 +76,18 @@ public class SchoolScaffoldService {
             classPrefix = toClassPrefix(schoolId);
         }
         if (!JAVA_IDENTIFIER_PATTERN.matcher(classPrefix).matches()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "类名前缀必须是 Java 类名格式，例如 Jit 或 Njupt");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "invalid classPrefix");
         }
 
-        String name = requireText(request.name(), "学校名称不能为空");
-        String shortName = requireText(request.shortName(), "学校简称不能为空");
+        String name = requireText(request.name(), "name is required");
+        String shortName = requireText(request.shortName(), "shortName is required");
         String loginMode = safeTrim(request.loginMode()).isBlank() ? "webview" : safeTrim(request.loginMode());
-        String loginUrl = requireText(request.loginUrl(), "登录地址不能为空");
+        String loginUrl = requireText(request.loginUrl(), "loginUrl is required");
         List<String> successUrlPatterns = request.successUrlPatterns() == null
                 ? List.of()
                 : request.successUrlPatterns().stream().map(this::safeTrim).filter(pattern -> !pattern.isBlank()).toList();
         if (successUrlPatterns.isEmpty()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "至少填写一个登录成功 URL 规则");
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "successUrlPatterns must not be empty");
         }
 
         return new SchoolScaffoldData(
@@ -107,16 +106,29 @@ public class SchoolScaffoldService {
         );
     }
 
-    private String schoolConfigTemplate(SchoolScaffoldData data) {
+    private String adapterTemplate(SchoolScaffoldData data) {
         return """
                 package %s;
 
-                import io.github.tissyboxc.clark_aams_backend.importers.schools.SchoolConfigProvider;
+                import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
+                import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
+                import io.github.tissyboxc.clark_aams_backend.importers.dto.CourseDto;
+                import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseRequest;
+                import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseResponse;
+                import io.github.tissyboxc.clark_aams_backend.importers.schools.SchoolAdapter;
                 import io.github.tissyboxc.clark_aams_backend.school.SchoolEntity;
                 import org.springframework.stereotype.Component;
 
+                import java.util.List;
+
                 @Component
-                public class %sSchoolConfig implements SchoolConfigProvider {
+                public class %sSchoolAdapter implements SchoolAdapter {
+                    private final %sClient client;
+
+                    public %sSchoolAdapter(%sClient client) {
+                        this.client = client;
+                    }
+
                     @Override
                     public SchoolEntity school() {
                         return new SchoolEntity(
@@ -129,13 +141,31 @@ public class SchoolScaffoldService {
                                 %s,
                                 %s,
                                 new String[]{%s},
-                                %s,
                                 %d
                         );
+                    }
+
+                    @Override
+                    public ImportCourseResponse importCourses(ImportCourseRequest request) {
+                        if (request == null || request.loginSession() == null) {
+                            throw new BusinessException(ErrorCode.BAD_REQUEST);
+                        }
+
+                        String html = client.fetchCoursePage(request.loginSession());
+                        return importHtml(html);
+                    }
+
+                    @Override
+                    public ImportCourseResponse importHtml(String html) {
+                        List<CourseDto> courses = %sParser.parseCourses(html);
+                        return new ImportCourseResponse(schoolId(), school().version(), courses, List.of());
                     }
                 }
                 """.formatted(
                 data.packageName(),
+                data.classPrefix(),
+                data.classPrefix(),
+                data.classPrefix(),
                 data.classPrefix(),
                 javaString(data.schoolId()),
                 javaString(data.name()),
@@ -146,56 +176,7 @@ public class SchoolScaffoldService {
                 javaString(data.loginMode()),
                 javaString(data.loginUrl()),
                 javaStringArrayItems(data.successUrlPatterns()),
-                javaString(data.schoolId()),
-                data.version()
-        );
-    }
-
-    private String importerTemplate(SchoolScaffoldData data) {
-        return """
-                package %s;
-
-                import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
-                import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
-                import io.github.tissyboxc.clark_aams_backend.importers.SchoolCourseImporter;
-                import io.github.tissyboxc.clark_aams_backend.importers.dto.CourseDto;
-                import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseRequest;
-                import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseResponse;
-                import org.springframework.stereotype.Component;
-
-                import java.util.List;
-
-                @Component
-                public class %sCourseImporter implements SchoolCourseImporter {
-                    private final %sClient client;
-
-                    public %sCourseImporter(%sClient client) {
-                        this.client = client;
-                    }
-
-                    @Override
-                    public String schoolId() {
-                        return %s;
-                    }
-
-                    @Override
-                    public ImportCourseResponse importCourses(ImportCourseRequest request) {
-                        if (request == null || request.loginSession() == null) {
-                            throw new BusinessException(ErrorCode.BAD_REQUEST);
-                        }
-
-                        String html = client.fetchCoursePage(request.loginSession());
-                        List<CourseDto> courses = %sParser.parseCourses(html);
-                        return new ImportCourseResponse(schoolId(), 1, courses, List.of());
-                    }
-                }
-                """.formatted(
-                data.packageName(),
-                data.classPrefix(),
-                data.classPrefix(),
-                data.classPrefix(),
-                data.classPrefix(),
-                javaString(data.schoolId()),
+                data.version(),
                 data.classPrefix()
         );
     }
@@ -219,9 +200,10 @@ public class SchoolScaffoldService {
                             }
                         }
 
-                        // TODO: 使用 cookie/studentId/successUrl 请求学校教务系统课表页面。
-                        // 不要记录完整 cookie；请求超时建议控制在 30 秒内。
-                        throw new BusinessException(ErrorCode.ACADEMIC_REQUEST_FAILED, "请实现 %sClient.fetchCoursePage");
+                        throw new BusinessException(
+                                ErrorCode.ACADEMIC_REQUEST_FAILED,
+                                "implement %sClient.fetchCoursePage"
+                        );
                     }
                 }
                 """.formatted(data.packageName(), data.classPrefix(), data.classPrefix());
@@ -240,8 +222,7 @@ public class SchoolScaffoldService {
                     }
 
                     public static List<CourseDto> parseCourses(String html) {
-                        // TODO: 解析学校课表 HTML/JSON，转换为统一 CourseDto。
-                        // CourseDto 字段需要兼容 Flutter Course.fromJson。
+                        // TODO: convert school html/json into CourseDto list
                         return List.of();
                     }
                 }

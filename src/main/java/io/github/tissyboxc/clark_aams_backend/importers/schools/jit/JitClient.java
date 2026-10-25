@@ -3,6 +3,7 @@ package io.github.tissyboxc.clark_aams_backend.importers.schools.jit;
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.LoginSessionDto;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Component
 public class JitClient {
     private static final String BASE_URL = "https://jwxt.jit.edu.cn";
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);

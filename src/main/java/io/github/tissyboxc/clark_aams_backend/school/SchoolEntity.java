@@ -10,7 +10,6 @@ public record SchoolEntity(
         String loginMode,
         String loginUrl,
         String[] successUrlPatterns,
-        String importerKey,
         String lessonTimeProfile,
         int version
 ) {
@@ -24,7 +23,6 @@ public record SchoolEntity(
             String loginMode,
             String loginUrl,
             String[] successUrlPatterns,
-            String importerKey,
             int version
     ) {
         this(
@@ -37,7 +35,6 @@ public record SchoolEntity(
                 loginMode,
                 loginUrl,
                 successUrlPatterns,
-                importerKey,
                 "general-a",
                 version
         );
