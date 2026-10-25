@@ -30,6 +30,9 @@ import java.util.List;
 @RequestMapping("/api/v1/course-pickups")
 public class CoursePickupController {
 
+    /** 旧格式媒体类型：显式请求时返回裸数组，供未升级客户端使用（deprecated）。 */
+    public static final String LEGACY_MEDIA_TYPE = "application/vnd.clark-aams.legacy+json";
+
     static final String DAILY_LIMIT_PROPERTY = "${clark-aams.quota.pickup.daily-limit:20}";
     static final String RATE_LIMIT_PROPERTY = "${clark-aams.quota.pickup.per-minute:5}";
 
@@ -70,12 +73,39 @@ public class CoursePickupController {
         return ApiResponse.ok(pickupService.recognizeAndCreate(images));
     }
 
-    @GetMapping(value = "/{code}", produces = "application/json;charset=UTF-8")
-    public ResponseEntity<String> get(@PathVariable String code) {
+    /**
+     * 按取件码取回课程（匿名可读）。
+     *
+     * <p>**契约变更（P2-2）**：此前直接返回存储的原始 JSON 数组，
+     * 是全项目唯一的「裸 JSON」分支，客户端必须为它单独写一套解析。
+     * 现在改为标准信封 `{code,message,data}`，`data` 为课程数组。
+     *
+     * <p>兼容策略：同一路径同时支持两种读法——
+     * 客户端若在 `Accept` 中声明 `application/vnd.clark-aams.legacy+json`
+     * 仍收到旧的裸数组。这样 App/Web 可以分开发版，不必强同步升级窗口。
+     * 该兼容通道标记为 deprecated，P3 结束前移除。
+     */
+    @GetMapping(value = "/{code}", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ApiResponse<Object> get(@PathVariable String code) {
+        CoursePickupRecordDto record = pickupStore.find(code)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "取件码不存在"));
+        return ApiResponse.ok(pickupService.parseCourses(record.jsonText()));
+    }
+
+    /**
+     * 旧格式通道（deprecated）。
+     *
+     * <p>只在客户端显式请求 legacy 媒体类型时命中，
+     * 保证已发布的 App v1.2.0 及更早版本仍能取件。
+     */
+    @GetMapping(value = "/{code}", produces = LEGACY_MEDIA_TYPE)
+    public ResponseEntity<String> getLegacy(@PathVariable String code) {
         CoursePickupRecordDto record = pickupStore.find(code)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "取件码不存在"));
         return ResponseEntity.ok()
                 .header("Content-Type", "application/json;charset=UTF-8")
+                .header("Deprecation", "true")
+                .header("Sunset", "Wed, 31 Dec 2026 23:59:59 GMT")
                 .body(record.jsonText());
     }
 }

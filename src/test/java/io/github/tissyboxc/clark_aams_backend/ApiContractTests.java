@@ -1,9 +1,11 @@
 package io.github.tissyboxc.clark_aams_backend;
 
 import io.github.tissyboxc.clark_aams_backend.ai.QuestionAnalysisService;
+import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupController;
 import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupRecordDto;
 import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupStore;
 import io.github.tissyboxc.clark_aams_backend.user.UserRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -746,7 +749,8 @@ class ApiContractTests {
     }
 
     @Test
-    void pickupCodeReturnsStoredCourseJson() throws Exception {
+    @DisplayName("取件码读取返回统一信封（P2-2），data 为课程数组")
+    void pickupCodeReturnsEnvelope() throws Exception {
         CoursePickupRecordDto record = pickupStore.create("""
                 [
                   {
@@ -764,8 +768,25 @@ class ApiContractTests {
 
         mockMvc.perform(get("/api/v1/course-pickups/{code}", record.code()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("test-course"))
-                .andExpect(jsonPath("$[0].weeks", hasSize(2)));
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data[0].name").value("test-course"))
+                .andExpect(jsonPath("$.data[0].weeks", hasSize(2)))
+                // 顶层不应再是数组
+                .andExpect(jsonPath("$[0]").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("取件码 legacy 通道仍返回裸数组，供未升级客户端使用")
+    void pickupCodeLegacyChannelStillWorks() throws Exception {
+        CoursePickupRecordDto record = pickupStore.create("""
+                [{ "name": "legacy-course", "day": 2, "startSection": 3, "endSection": 4 }]
+                """, List.of());
+
+        mockMvc.perform(get("/api/v1/course-pickups/{code}", record.code())
+                        .accept(CoursePickupController.LEGACY_MEDIA_TYPE))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Deprecation", "true"))
+                .andExpect(jsonPath("$[0].name").value("legacy-course"));
     }
 
     private MockHttpSession loginAsAdmin() throws Exception {

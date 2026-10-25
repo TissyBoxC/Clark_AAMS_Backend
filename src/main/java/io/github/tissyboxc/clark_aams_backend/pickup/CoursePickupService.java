@@ -31,7 +31,13 @@ public class CoursePickupService {
         return new CoursePickupCreateResponse(record.code(), parseCourses(jsonText));
     }
 
-    private Object parseCourses(String jsonText) {
+    /**
+     * 把存储的课表 JSON 文本解析为对象。
+     *
+     * <p>存储层刻意只保留原始文本（识别结果原样落盘，便于排障与重放），
+     * 因此读取接口需要在这里解析一次，才能放进统一信封（P2-2）。
+     */
+    public Object parseCourses(String jsonText) {
         try {
             return objectMapper.readValue(jsonText, Object.class);
         } catch (Exception exception) {
