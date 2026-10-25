@@ -1,5 +1,7 @@
 package io.github.tissyboxc.clark_aams_backend.admin;
 
+import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
+import io.github.tissyboxc.clark_aams_backend.user.UserController;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -54,7 +56,21 @@ public class AdminAuthFilter implements Filter {
             return;
         }
 
+        // 已登录的普通用户访问后台 → 403（而不是 401）。
+        // 401 会诱导客户端反复重试登录，403 才是「你没有这个身份」的准确回答。
+        // 对应审查条目 P1-3：role=user 访问 /admin/** 应得 403。
+        if (isRegularUser(httpRequest)) {
+            writeForbiddenJson(httpRequest, httpResponse);
+            return;
+        }
+
         writeUnauthorizedJson(httpRequest, httpResponse, 40101, "请先登录后台管理");
+    }
+
+    /** 是否存在有效的普通用户会话（与 `CurrentUserResolver` 的判据一致）。 */
+    private boolean isRegularUser(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        return session != null && session.getAttribute(UserController.SESSION_KEY) != null;
     }
 
     private boolean isProtectedAdminApi(String path) {
@@ -81,8 +97,28 @@ public class AdminAuthFilter implements Filter {
             int code,
             String message
     ) throws IOException {
+        writeJson(request, response, HttpServletResponse.SC_UNAUTHORIZED, code, message);
+    }
+
+    private void writeForbiddenJson(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        writeJson(
+                request,
+                response,
+                HttpServletResponse.SC_FORBIDDEN,
+                ErrorCode.FORBIDDEN.code(),
+                "当前账号没有后台管理权限"
+        );
+    }
+
+    private void writeJson(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            int status,
+            int code,
+            String message
+    ) throws IOException {
         addCorsHeadersIfNeeded(request, response);
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(status);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("{\"code\":" + code + ",\"message\":\"" + message + "\",\"data\":null}");
