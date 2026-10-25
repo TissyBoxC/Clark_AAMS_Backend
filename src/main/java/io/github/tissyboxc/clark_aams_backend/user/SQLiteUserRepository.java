@@ -167,32 +167,6 @@ public class SQLiteUserRepository implements UserRepository {
         }
     }
 
-    public synchronized Optional<UserRecord> findByUsername(String username) {
-        return queryOne("select * from users where username = ? order by id asc limit 1", username);
-    }
-
-    public synchronized Optional<UserRecord> updateEmail(long id, String email, boolean bound, boolean verified, String verifyCode) {
-        String sql = """
-                update users
-                set email = ?, email_bound = ?, email_verified = ?, email_verify_code = ?
-                where id = ?
-                """;
-        try (Connection connection = connection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, email);
-            statement.setBoolean(2, bound);
-            statement.setBoolean(3, verified);
-            statement.setString(4, verifyCode);
-            statement.setLong(5, id);
-            if (statement.executeUpdate() == 0) {
-                return Optional.empty();
-            }
-            return findById(id);
-        } catch (SQLException exception) {
-            throw new IllegalStateException("Failed to update user email", exception);
-        }
-    }
-
     private void initSchema() {
         String sql = """
                 create table if not exists users (
