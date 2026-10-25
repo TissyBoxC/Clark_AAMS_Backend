@@ -9,6 +9,9 @@ import java.util.List;
  * {@link #weeks()} 与 {@link #startWeek()}/{@link #endWeek()} 是派生字段，仅为兼容
  * 尚未升级的客户端而保留，由 {@link #of} 统一计算，**不要手工填写**。
  *
+ * @param id           服务端主键。**0 表示尚未落库**（新建前的入参）。
+ *                     必须回传给客户端：{@code PUT}/{@code DELETE} 都要用它，
+ *                     不回传的话客户端刚建完就不知道该怎么改、怎么删。
  * @param name         课程名
  * @param startWeek    派生：首个上课周（可能为 null）
  * @param endWeek      派生：末个上课周（可能为 null）
@@ -23,6 +26,7 @@ import java.util.List;
  * @param weekRule     真相源：单双周标记 ALL/ODD/EVEN
  */
 public record CourseDto(
+        long id,
         String name,
         Integer startWeek,
         Integer endWeek,
@@ -36,6 +40,36 @@ public record CourseDto(
         List<int[]> weekRanges,
         WeekPattern.Rule weekRule
 ) {
+
+    /**
+     * 兼容构造：不带 id，视为「尚未落库」。
+     *
+     * <p>导入解析、AI 识别等场景产出的课程本来就没有主键，
+     * 落库后由仓储层分配并回填。
+     */
+    public CourseDto(
+            String name,
+            Integer startWeek,
+            Integer endWeek,
+            Integer dayOfWeek,
+            Integer startLesson,
+            Integer endLesson,
+            String location,
+            String teacher,
+            List<Integer> weeks,
+            String rawTime,
+            List<int[]> weekRanges,
+            WeekPattern.Rule weekRule
+    ) {
+        this(0L, name, startWeek, endWeek, dayOfWeek, startLesson, endLesson,
+                location, teacher, weeks, rawTime, weekRanges, weekRule);
+    }
+
+    /** 复制一份并替换 id，用于落库后回填。 */
+    public CourseDto withId(long newId) {
+        return new CourseDto(newId, name, startWeek, endWeek, dayOfWeek, startLesson, endLesson,
+                location, teacher, weeks, rawTime, weekRanges, weekRule);
+    }
 
     /**
      * 唯一构造入口：由 {@link WeekPattern} 派生所有冗余字段。
@@ -55,6 +89,7 @@ public record CourseDto(
     ) {
         WeekPattern safe = pattern == null ? WeekPattern.empty() : pattern;
         return new CourseDto(
+                0L,
                 name,
                 safe.firstWeek(),
                 safe.lastWeek(),

@@ -7,6 +7,12 @@ ai-config.json
 admin-config.json
 email-config.json
 users.db
+# 运行时数据库不该进版本库（P3-3 发现 clark-aams.db 被误跟踪了两个月）
+clark-aams.db
+*.db-journal
+*.db-wal
+*.db-shm
+target/
 course-pickups/
 *.log
 !gradle/wrapper/gradle-wrapper.jar

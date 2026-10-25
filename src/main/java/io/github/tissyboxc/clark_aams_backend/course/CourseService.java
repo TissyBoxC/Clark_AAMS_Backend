@@ -142,6 +142,7 @@ public class CourseService {
         WeekPattern pattern = new WeekPattern(ranges, record.rule());
         List<Integer> weeks = pattern.expand();
         return new CourseDto(
+                record.id(),
                 record.name(),
                 record.startWeek(),
                 record.endWeek(),
