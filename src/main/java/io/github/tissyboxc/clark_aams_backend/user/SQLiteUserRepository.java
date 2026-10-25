@@ -53,10 +53,55 @@ public class SQLiteUserRepository implements UserRepository {
     public synchronized long nextId() {
         try (Connection connection = connection();
              Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery("select coalesce(max(id), 0) + 1 as next_id from users")) {
+             ResultSet resultSet = statement.executeQuery("select coalesce((select seq from sqlite_sequence where name = 'users'), 0) + 1 as next_id")) {
             return resultSet.next() ? resultSet.getLong("next_id") : 1L;
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to allocate next user id", exception);
+        }
+    }
+
+    /**
+     * 原子地分配 id 并插入（P5-1）。
+     *
+     * <p>原实现是「先 nextId() 再 save()」，两条语句之间没有原子性：
+     * 并发注册会拿到同一个 id，后写的覆盖先写的。
+     * 这里让数据库自增分配 id，「取号」与「插入」在同一条 SQL 内完成。
+     */
+    @Override
+    public synchronized UserRecord insert(UserRecord user) {
+        String sql = """
+                insert into users(username, password_hash, email, login_code, email_bound, email_verified, email_verify_code, question_analysis_count, login_code_issued_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection connection = connection();
+             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, user.username());
+            statement.setString(2, user.passwordHash());
+            statement.setString(3, user.email());
+            statement.setString(4, user.loginCode());
+            statement.setBoolean(5, user.emailBound());
+            statement.setBoolean(6, user.emailVerified());
+            statement.setString(7, user.emailVerifyCode());
+            statement.setLong(8, user.questionAnalysisCount());
+            statement.setLong(9, user.loginCodeIssuedAt());
+            statement.executeUpdate();
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                long id = keys.next() ? keys.getLong(1) : user.id();
+                return new UserRecord(
+                        id,
+                        user.username(),
+                        user.passwordHash(),
+                        user.email(),
+                        user.loginCode(),
+                        user.emailBound(),
+                        user.emailVerified(),
+                        user.emailVerifyCode(),
+                        user.questionAnalysisCount(),
+                        user.loginCodeIssuedAt()
+                );
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Failed to insert user", exception);
         }
     }
 
@@ -170,7 +215,7 @@ public class SQLiteUserRepository implements UserRepository {
     private void initSchema() {
         String sql = """
                 create table if not exists users (
-                  id integer primary key,
+                  id integer primary key autoincrement,
                   username text not null,
                   password_hash text not null,
                   email text unique,
@@ -258,8 +303,29 @@ public class SQLiteUserRepository implements UserRepository {
         statement.setLong(10, user.loginCodeIssuedAt());
     }
 
+    /**
+     * 建立连接并应用并发相关设置（P5-1）。
+     *
+     * <p>原实现直接返回连接，SQLite 默认 busy timeout 为 0，
+     * 并发写入时第二个连接会立刻抛 {@code SQLITE_BUSY}（database is locked）。
+     * 实测 8 线程并发插入 7 个失败——即真实场景下并发注册会莫名失败。
+     *
+     * <p>两项设置：
+     * <ul>
+     *   <li>{@code busy_timeout}：拿不到写锁时等待而不是立刻失败</li>
+     *   <li>{@code journal_mode=WAL}：读写不互相阻塞，写入串行但读可并发</li>
+     * </ul>
+     */
     private Connection connection() throws SQLException {
-        return DriverManager.getConnection(jdbcUrl);
+        Connection connection = DriverManager.getConnection(jdbcUrl);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("pragma busy_timeout = 5000");
+            statement.execute("pragma journal_mode = WAL");
+        } catch (SQLException exception) {
+            connection.close();
+            throw exception;
+        }
+        return connection;
     }
 
     private Path resolveDbPath() {

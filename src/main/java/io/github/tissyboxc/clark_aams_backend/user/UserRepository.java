@@ -4,7 +4,24 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository {
+    /**
+     * 只读地预览「下一个 id 大概是多少」。
+     *
+     * <p><b>不要用它来分配 id 再 save</b>：这两步之间没有原子性，
+     * 并发时会拿到重复 id。正确做法是 {@link #insert(UserRecord)}。
+     * 保留此方法仅供测试与诊断。
+     */
     long nextId();
+
+    /**
+     * 原子地分配 id 并插入用户，返回带真实 id 的记录。
+     *
+     * <p>这是注册流程唯一应该使用的写入入口：id 由数据库自增分配，
+     * 「取号」与「插入」在同一条 SQL 内完成，不存在并发窗口。
+     *
+     * <p>传入记录的 {@code id} 字段会被忽略。
+     */
+    UserRecord insert(UserRecord user);
 
     UserRecord save(UserRecord user);
 

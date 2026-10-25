@@ -44,7 +44,7 @@ public class UserAccountService {
         }
 
         UserRepository.UserRecord record = new UserRepository.UserRecord(
-                userRepository.nextId(),
+                0L,
                 username,
                 hashPassword(password),
                 email,
@@ -55,7 +55,9 @@ public class UserAccountService {
                 0,
                 System.currentTimeMillis()
         );
-        return toProfile(userRepository.save(record));
+        // 用 insert() 而不是「nextId() + save()」：后者两步之间没有原子性，
+        // 并发注册会拿到同一个 id，后写的覆盖先写的（P5-1）。
+        return toProfile(userRepository.insert(record));
     }
 
     public UserProfileDto login(UserLoginRequest request) {
