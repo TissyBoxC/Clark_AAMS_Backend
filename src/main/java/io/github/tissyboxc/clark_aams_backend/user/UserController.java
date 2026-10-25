@@ -67,7 +67,21 @@ public class UserController {
 
     @GetMapping("/me")
     public ApiResponse<UserProfileDto> me(HttpServletRequest request) {
-        return ApiResponse.ok(currentUser(request));
+        // 不带登录码：该接口会被频繁调用，凭据不应出现在响应里（F4）
+        return ApiResponse.ok(currentUser(request).withoutLoginCode());
+    }
+
+    /**
+     * 退出所有设备：吊销当前登录码并签发新的。
+     *
+     * <p>调用方若已登录，会在响应里拿到**新**登录码，需要立即替换本地缓存；
+     * 旧码从现在起失效，其他设备下次请求即被拒绝（A2）。
+     */
+    @PostMapping("/login-code/rotate")
+    public ApiResponse<UserProfileDto> rotateLoginCode(HttpServletRequest request) {
+        long userId = requireCurrentUserId(request);
+        UserProfileDto rotated = userAccountService.rotateLoginCode(userId);
+        return ApiResponse.ok(rotated);
     }
 
     @PostMapping("/email/code")

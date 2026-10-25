@@ -16,6 +16,15 @@ public class UserAccountService {
     private static final int LOGIN_CODE_LENGTH = 12;
     private static final int EMAIL_CODE_LENGTH = 6;
 
+    /**
+     * 登录码有效期：90 天。
+     *
+     * <p>取值考虑：App 用户期望「装一次长期不用再登」，太短会频繁打断；
+     * 但无限期又不符合「可吊销」的安全底线。90 天是折中，
+     * 且任何一次 {@link #rotateLoginCode} 都会立即让旧码失效。
+     */
+    static final long LOGIN_CODE_TTL_MS = 90L * 24 * 60 * 60 * 1000;
+
     private final UserRepository userRepository;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -43,7 +52,8 @@ public class UserAccountService {
                 false,
                 false,
                 "",
-                0
+                0,
+                System.currentTimeMillis()
         );
         return toProfile(userRepository.save(record));
     }
@@ -55,6 +65,7 @@ public class UserAccountService {
         String loginCode = normalize(request.loginCode());
         if (!loginCode.isBlank()) {
             return userRepository.findByLoginCode(loginCode)
+                    .map(this::requireLoginCodeNotExpired)
                     .map(this::toProfile)
                     .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_INVALID, "登录码无效"));
         }
@@ -92,8 +103,40 @@ public class UserAccountService {
             throw new BusinessException(ErrorCode.LOGIN_INVALID);
         }
         return userRepository.findByLoginCode(normalized)
+                .map(this::requireLoginCodeNotExpired)
                 .map(this::toProfile)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_INVALID));
+    }
+
+    /**
+     * 吊销当前登录码并签发新的（「退出所有设备」）。
+     *
+     * <p>对应审查条目 A2：原先登录码一旦泄露就永久有效，
+     * 且没有任何让旧码失效的途径。轮换后旧码立即不可用。
+     *
+     * <p>历史数据中 `login_code_issued_at = 0` 的视为不过期，
+     * 但一旦轮换就会写入真实时间戳，此后按 {@link #LOGIN_CODE_TTL_MS} 判定。
+     */
+    public UserProfileDto rotateLoginCode(long id) {
+        String newCode = generateUniqueLoginCode();
+        UserRepository.UserRecord record = userRepository.rotateLoginCode(id, newCode);
+        return toProfile(record);
+    }
+
+    /** 校验登录码有效期；过期抛 401。 */
+    private UserRepository.UserRecord requireLoginCodeNotExpired(UserRepository.UserRecord record) {
+        long issuedAt = record.loginCodeIssuedAt();
+        if (issuedAt <= 0) {
+            // 历史数据，尚无签发时间记录，保持可用
+            return record;
+        }
+        if (System.currentTimeMillis() - issuedAt > LOGIN_CODE_TTL_MS) {
+            throw new BusinessException(
+                    ErrorCode.LOGIN_INVALID,
+                    "登录码已过期，请重新登录"
+            );
+        }
+        return record;
     }
 
     public UserProfileDto requestEmailCode(long id, String email) {
@@ -119,7 +162,8 @@ public class UserAccountService {
                 false,
                 false,
                 code,
-                existing.questionAnalysisCount()
+                existing.questionAnalysisCount(),
+                existing.loginCodeIssuedAt()
         );
         userRepository.save(updated);
         return toProfile(updated);
@@ -148,7 +192,8 @@ public class UserAccountService {
                 false,
                 false,
                 code,
-                existing.questionAnalysisCount()
+                existing.questionAnalysisCount(),
+                existing.loginCodeIssuedAt()
         );
         userRepository.save(updated);
         return new EmailChallenge(toProfile(updated), code);
@@ -173,7 +218,8 @@ public class UserAccountService {
                 true,
                 true,
                 "",
-                existing.questionAnalysisCount()
+                existing.questionAnalysisCount(),
+                existing.loginCodeIssuedAt()
         );
         userRepository.save(updated);
         return toProfile(updated);
