@@ -1,5 +1,6 @@
 package io.github.tissyboxc.clark_aams_backend.user;
 
+import io.github.tissyboxc.clark_aams_backend.common.LogMasker;
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
 import jakarta.mail.internet.MimeMessage;
@@ -33,7 +34,7 @@ public class EmailCodeSender {
     public void sendVerificationCode(String email, String code) {
         EmailConfigStore.StoredEmailConfig config = configStore.runtimeConfig();
         if (!config.enabled()) {
-            log.info("Email sender is not configured; verification code generated for {}", email);
+            log.info("Email sender is not configured; verification code generated for {}", LogMasker.email(email));
             return;
         }
         if (isBlank(config.endpoint()) || isBlank(config.senderAddress()) || isBlank(config.apiKey())) {
@@ -77,7 +78,7 @@ public class EmailCodeSender {
             helper.setSubject(subject(config));
             helper.setText(textBody(code), htmlBody(config, email, code));
             sender.send(message);
-            log.info("Verification email sent to {} by SMTP {}", email, endpoint.host());
+            log.info("Verification email sent to {} by SMTP {}", LogMasker.email(email), endpoint.host());
         } catch (Exception exception) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "邮箱验证码发送失败");
         }
@@ -105,7 +106,7 @@ public class EmailCodeSender {
                     .body(payload)
                     .retrieve()
                     .toBodilessEntity();
-            log.info("Verification email sent to {} by HTTP provider {}", email, config.provider());
+            log.info("Verification email sent to {} by HTTP provider {}", LogMasker.email(email), config.provider());
         } catch (RestClientException exception) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "邮箱验证码发送失败");
         }
