@@ -65,10 +65,19 @@ public class UserController {
         return ApiResponse.ok(Map.of("authenticated", false));
     }
 
+    /**
+     * 当前用户资料。
+     *
+     * <p>未登录返回 401（此前是 200 + 一个 `id = 0` 的空用户）。
+     * 改动理由：一是语义正确——「没有当前用户」不是一次成功的读取；
+     * 二是空用户会被误当成真实数据，掩盖令牌失效等鉴权失败，
+     * 与其它接口的 401 约定也不一致。
+     *
+     * <p>响应不含登录码（F4）。
+     */
     @GetMapping("/me")
     public ApiResponse<UserProfileDto> me(HttpServletRequest request) {
-        // 不带登录码：该接口会被频繁调用，凭据不应出现在响应里（F4）
-        return ApiResponse.ok(currentUser(request).withoutLoginCode());
+        return ApiResponse.ok(userAccountService.getById(requireCurrentUserId(request)).withoutLoginCode());
     }
 
     /**
@@ -103,17 +112,6 @@ public class UserController {
     public ApiResponse<UserProfileDto> verifyEmail(@RequestBody UserEmailVerifyRequest request, HttpServletRequest httpRequest) {
         UserProfileDto user = userAccountService.confirmEmail(requireCurrentUserId(httpRequest), request.code());
         return ApiResponse.ok(user);
-    }
-
-    private UserProfileDto currentUser(HttpServletRequest request) {
-        Long id = currentUserId(request);
-        if (id == null) {
-            id = restoreUserIdFromLoginCodeHeader(request);
-        }
-        if (id == null) {
-            return new UserProfileDto(0, "", "", "", false, false, 0);
-        }
-        return userAccountService.getById(id);
     }
 
     private Long restoreUserIdFromLoginCodeHeader(HttpServletRequest request) {

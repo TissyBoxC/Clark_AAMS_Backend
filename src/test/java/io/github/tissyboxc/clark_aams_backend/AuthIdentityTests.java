@@ -56,7 +56,7 @@ class AuthIdentityTests {
                 .andExpect(jsonPath("$.data.role").value("USER"))
                 .andExpect(jsonPath("$.data.authenticated").value(true))
                 .andExpect(jsonPath("$.data.user.loginCode").value(""))
-                .andExpect(jsonPath("$.data.user.username").value("iduser1"));
+                .andExpect(jsonPath("$.data.user.username").value(org.hamcrest.Matchers.startsWith("iduser1_")));
     }
 
     @Test
@@ -110,10 +110,36 @@ class AuthIdentityTests {
                 .andExpect(jsonPath("$.data.role").value("GUEST"));
     }
 
+    @Test
+    @DisplayName("未登录访问 /user/me 返回 401，而不是 200 + 空用户")
+    void userMeRequiresLogin() throws Exception {
+        mockMvc.perform(get("/api/v1/user/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(40101));
+    }
+
+    @Test
+    @DisplayName("登录后 /user/me 正常返回，且不含登录码")
+    void userMeWorksWhenLoggedIn() throws Exception {
+        MvcResultHolder holder = registerUser("meok");
+        mockMvc.perform(get("/api/v1/user/me").session(holder.session()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.loginCode").value(""))
+                .andExpect(jsonPath("$.data.id").isNumber());
+    }
+
     private record MvcResultHolder(MockHttpSession session) {
     }
 
-    private MvcResultHolder registerUser(String username) throws Exception {
+    /**
+     * 注册一个用户并返回其会话。
+     *
+     * <p>用户名与邮箱都带随机后缀：测试库文件在多次 `gradle test`
+     * 之间是复用的，固定用户名会在第二次运行时撞 409 USER_EMAIL_CONFLICT。
+     */
+    private MvcResultHolder registerUser(String usernamePrefix) throws Exception {
+        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
+        String username = usernamePrefix + "_" + suffix;
         MockHttpSession session = new MockHttpSession();
         mockMvc.perform(post("/api/v1/user/register")
                         .session(session)
