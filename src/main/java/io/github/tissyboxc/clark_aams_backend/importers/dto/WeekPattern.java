@@ -72,19 +72,23 @@ public record WeekPattern(List<int[]> ranges, Rule rule) {
         boolean allOdd = sorted.stream().allMatch(w -> w % 2 == 1);
         boolean allEven = sorted.stream().allMatch(w -> w % 2 == 0);
         Rule rule = Rule.ALL;
-        List<Integer> forRanges = sorted;
         if (allOdd && sorted.size() > 1) {
             rule = Rule.ODD;
         } else if (allEven && sorted.size() > 1) {
             rule = Rule.EVEN;
         }
 
+        // 判定出单/双周后，区间应合并成一段连续范围（步长为 2），
+        // 这样 [1,3,5,7] 得到 [1,7]+ODD 而不是四个单周区间，
+        // 展示为「1-7周(单)」而不是「1,3,5,7周(单)」。
+        // 展开逻辑会按 rule 过滤，因此合并后语义完全等价。
+        int step = rule == Rule.ALL ? 1 : 2;
         List<int[]> ranges = new ArrayList<>();
-        int start = forRanges.get(0);
+        int start = sorted.get(0);
         int prev = start;
-        for (int i = 1; i < forRanges.size(); i++) {
-            int current = forRanges.get(i);
-            if (current == prev + 1) {
+        for (int i = 1; i < sorted.size(); i++) {
+            int current = sorted.get(i);
+            if (current == prev + step) {
                 prev = current;
                 continue;
             }

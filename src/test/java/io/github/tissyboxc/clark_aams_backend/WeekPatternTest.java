@@ -40,6 +40,46 @@ class WeekPatternTest {
     }
 
     @Test
+    @DisplayName("单周区间应合并成一段，展示为 1-7周(单) 而非 1,3,5,7周(单)")
+    void oddRuleMergesIntoOneRange() {
+        WeekPattern pattern = WeekPattern.fromWeeks(List.of(1, 3, 5, 7));
+        assertEquals(1, pattern.ranges().size(), "单周应合并为一个区间");
+        assertEquals(1, pattern.ranges().get(0)[0]);
+        assertEquals(7, pattern.ranges().get(0)[1]);
+        assertEquals("1-7周(单)", pattern.toText());
+    }
+
+    @Test
+    @DisplayName("双周区间应合并成一段")
+    void evenRuleMergesIntoOneRange() {
+        WeekPattern pattern = WeekPattern.fromWeeks(List.of(2, 4, 6, 8));
+        assertEquals(1, pattern.ranges().size());
+        assertEquals(2, pattern.ranges().get(0)[0]);
+        assertEquals(8, pattern.ranges().get(0)[1]);
+        assertEquals(List.of(2, 4, 6, 8), pattern.expand());
+        assertEquals("2-8周(双)", pattern.toText());
+    }
+
+    @Test
+    @DisplayName("单双周混排时按原始步长 1 合并，不误判")
+    void mixedDoesNotMergeByTwo() {
+        WeekPattern pattern = WeekPattern.fromWeeks(List.of(1, 2, 3, 4));
+        assertEquals(WeekPattern.Rule.ALL, pattern.rule());
+        assertEquals(1, pattern.ranges().size());
+        assertEquals(List.of(1, 2, 3, 4), pattern.expand());
+    }
+
+    @Test
+    @DisplayName("单周区间展开仍然只含奇数周，与合并前后等价")
+    void mergedOddExpandsIdentically() {
+        WeekPattern merged = WeekPattern.fromWeeks(List.of(1, 3, 5, 7, 9));
+        assertEquals(List.of(1, 3, 5, 7, 9), merged.expand());
+        // 与手工构造的区间展开保持一致
+        WeekPattern explicit = new WeekPattern(List.of(new int[]{1, 9}), WeekPattern.Rule.ODD);
+        assertEquals(explicit.expand(), merged.expand());
+    }
+
+    @Test
     @DisplayName("全偶数识别为双周")
     void evenRule() {
         WeekPattern pattern = WeekPattern.fromWeeks(List.of(2, 4, 6, 8));
