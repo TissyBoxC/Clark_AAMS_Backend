@@ -9,9 +9,12 @@ import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -222,10 +225,34 @@ public class CoursePickupStore {
         }
     }
 
+    /**
+     * 原子写索引文件（P5-3）。
+     *
+     * <p>原实现直接 `writeValue(indexPath.toFile(), ...)`，
+     * 是「截断目标文件再写入」：进程在写一半时崩溃/断电，
+     * 文件会停在半截，下次启动所有取件码一起读不出来。
+     *
+     * <p>改为先写同目录临时文件、刷盘，再 `ATOMIC_MOVE` 覆盖。
+     * 移动是原子操作，任何时刻磁盘上都有一份完整可读的索引。
+     */
     private void writeIndex() {
         try {
             Files.createDirectories(storageDir);
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(indexPath.toFile(), records.values());
+            Path temp = Files.createTempFile(storageDir, "pickup-index-", ".tmp");
+            try {
+                try (OutputStream output = Files.newOutputStream(temp)) {
+                    objectMapper.writerWithDefaultPrettyPrinter()
+                            .writeValue(output, records.values());
+                    output.flush();
+                }
+                try {
+                    Files.move(temp, indexPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException exception) {
+                    Files.move(temp, indexPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                Files.deleteIfExists(temp);
+            }
         } catch (IOException exception) {
             throw new UncheckedIOException("Failed to write pickup index: " + indexPath, exception);
         }
