@@ -51,8 +51,11 @@ public class GlobalExceptionHandler {
         return switch (errorCode) {
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case LOGIN_INVALID -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND, USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case USER_EMAIL_CONFLICT -> HttpStatus.CONFLICT;
+            // 配额用尽与限流都返回 429，语义为「稍后再试」
+            case QUOTA_EXCEEDED, RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
             case ACADEMIC_REQUEST_FAILED, COURSE_PARSE_FAILED, INTERNAL_ERROR, AI_REQUEST_FAILED ->
                     HttpStatus.INTERNAL_SERVER_ERROR;
             case OK -> HttpStatus.OK;
