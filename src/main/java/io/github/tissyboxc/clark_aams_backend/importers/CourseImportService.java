@@ -2,6 +2,7 @@ package io.github.tissyboxc.clark_aams_backend.importers;
 
 import io.github.tissyboxc.clark_aams_backend.common.BusinessException;
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
+import io.github.tissyboxc.clark_aams_backend.importers.dto.CourseDto;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.HtmlImportCourseRequest;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.HtmlImportCourseResponse;
 import io.github.tissyboxc.clark_aams_backend.importers.dto.ImportCourseRequest;
@@ -77,17 +78,34 @@ public class CourseImportService {
         );
     }
 
-    public CoursePickupCreateResponse importCoursesAndCreatePickup(String schoolId, ImportCourseRequest request) {
+    /**
+     * 导入并生成取件码，同时返回强类型的课程列表。
+     *
+     * <p>{@link CoursePickupCreateResponse#courses()} 是 {@code Object}
+     * （要兼容原始 JSON 形态），调用方若还需要类型化课程去落库，
+     * 用这个方法可以避免「导入两次」或强制转换。
+     */
+    public ImportWithPickup importCoursesAndCreatePickupTyped(String schoolId, ImportCourseRequest request) {
         ImportCourseResponse response = importCourses(schoolId, request);
         try {
             String jsonText = objectMapper.writeValueAsString(response.courses());
             CoursePickupRecordDto record = pickupStore.create(jsonText, List.of());
-            return new CoursePickupCreateResponse(record.code(), response.courses());
+            return new ImportWithPickup(
+                    new CoursePickupCreateResponse(record.code(), response.courses()),
+                    response.courses()
+            );
         } catch (BusinessException exception) {
             throw exception;
         } catch (Exception exception) {
             throw new BusinessException(ErrorCode.COURSE_PARSE_FAILED, "Failed to generate pickup JSON", exception);
         }
+    }
+
+    /** 取件码结果 + 强类型课程。 */
+    public record ImportWithPickup(
+            CoursePickupCreateResponse pickup,
+            java.util.List<CourseDto> courses
+    ) {
     }
 
     private SchoolAdapter resolveAdapter(HtmlImportCourseRequest request) {

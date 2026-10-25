@@ -8,6 +8,7 @@ public enum ErrorCode {
     SCHOOL_NOT_FOUND(40401, "学校不存在"),
     IMPORTER_NOT_FOUND(40402, "当前学校暂未配置教务系统导入"),
     USER_NOT_FOUND(40403, "用户不存在"),
+    COURSE_NOT_FOUND(40404, "课程不存在"),
     USER_EMAIL_CONFLICT(40901, "QQ 邮箱已被绑定"),
     /** 单用户配额用尽（如识别次数），需等待重置或联系管理员。 */
     QUOTA_EXCEEDED(42901, "今日额度已用完，请明天再试"),

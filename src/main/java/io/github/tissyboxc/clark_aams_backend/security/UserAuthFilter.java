@@ -40,7 +40,15 @@ public class UserAuthFilter implements Filter {
     private static final List<ProtectedRoute> PROTECTED = List.of(
             new ProtectedRoute("POST", "/api/v1/courses/recognize"),
             new ProtectedRoute("POST", "/api/v1/course-pickups"),
-            new ProtectedRoute("POST", "/api/v1/ai/questions/")
+            // 原为 "/api/v1/ai/questions/"，与控制器实际路径
+            // "/api/v1/questions" 不符，导致该过滤从未生效（P2 记录在案）。
+            // 控制器内部另有 requireUserId 兜底，但过滤层不应形同虚设。
+            new ProtectedRoute("POST", "/api/v1/questions/"),
+            // 课表读写按用户隔离（P3-1）：读也要求登录，
+            // 因为返回的是「我的」课表，匿名无从确定归属。
+            new ProtectedRoute("GET", "/api/v1/courses/schedule"),
+            new ProtectedRoute("PUT", "/api/v1/courses/schedule"),
+            new ProtectedRoute("DELETE", "/api/v1/courses/schedule")
     );
 
     private final CurrentUserResolver currentUserResolver;

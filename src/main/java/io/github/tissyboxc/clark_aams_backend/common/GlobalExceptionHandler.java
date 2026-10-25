@@ -29,6 +29,9 @@ public class GlobalExceptionHandler {
             IllegalArgumentException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(Exception exception) {
+        // 对外仍是统一的 40001，但必须留下真实原因：
+        // 之前这里既不记录也不回传，导致请求体绑定失败无从排查（P3-1 踩过）。
+        log.warn("Bad request rejected: {}: {}", exception.getClass().getSimpleName(), exception.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.fail(ErrorCode.BAD_REQUEST, ErrorCode.BAD_REQUEST.defaultMessage()));
@@ -52,7 +55,7 @@ public class GlobalExceptionHandler {
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case LOGIN_INVALID -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
-            case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND, USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND, USER_NOT_FOUND, COURSE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case USER_EMAIL_CONFLICT -> HttpStatus.CONFLICT;
             // 配额用尽与限流都返回 429，语义为「稍后再试」
             case QUOTA_EXCEEDED, RATE_LIMITED -> HttpStatus.TOO_MANY_REQUESTS;
