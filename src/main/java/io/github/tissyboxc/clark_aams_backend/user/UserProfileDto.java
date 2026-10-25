@@ -10,6 +10,7 @@ package io.github.tissyboxc.clark_aams_backend.user;
  * （{@link UserLoginResponse}）或显式轮换接口中返回一次。
  *
  * @param loginCode 为空串表示「本次不返回登录码」；仅登录/轮换场景填充
+ * @param role      P1-1 账号表合并后的身份角色：user / admin
  */
 public record UserProfileDto(
         long id,
@@ -18,8 +19,22 @@ public record UserProfileDto(
         String loginCode,
         boolean emailBound,
         boolean emailVerified,
-        long questionAnalysisCount
+        long questionAnalysisCount,
+        String role
 ) {
+
+    /** 兼容旧构造：不带 role 时视为普通用户。 */
+    public UserProfileDto(
+            long id,
+            String username,
+            String email,
+            String loginCode,
+            boolean emailBound,
+            boolean emailVerified,
+            long questionAnalysisCount
+    ) {
+        this(id, username, email, loginCode, emailBound, emailVerified, questionAnalysisCount, "user");
+    }
 
     /** 生成不含登录码的对外资料，供 `/user/me` 等读取接口使用。 */
     public UserProfileDto withoutLoginCode() {
@@ -30,7 +45,12 @@ public record UserProfileDto(
                 "",
                 emailBound,
                 emailVerified,
-                questionAnalysisCount
+                questionAnalysisCount,
+                role
         );
+    }
+
+    public boolean isAdmin() {
+        return "admin".equalsIgnoreCase(role);
     }
 }

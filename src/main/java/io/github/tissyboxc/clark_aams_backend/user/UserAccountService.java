@@ -247,7 +247,8 @@ public class UserAccountService {
                 record.loginCode(),
                 record.emailBound(),
                 record.emailVerified(),
-                record.questionAnalysisCount()
+                record.questionAnalysisCount(),
+                record.effectiveRole()
         );
     }
 

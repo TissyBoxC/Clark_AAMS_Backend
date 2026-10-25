@@ -52,7 +52,8 @@ public class UserController {
                 user.loginCode(),
                 user.emailBound(),
                 user.emailVerified(),
-                user.questionAnalysisCount()
+                user.questionAnalysisCount(),
+                user.role()
         ));
     }
 

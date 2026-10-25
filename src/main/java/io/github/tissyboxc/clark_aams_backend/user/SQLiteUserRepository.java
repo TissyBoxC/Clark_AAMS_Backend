@@ -72,8 +72,8 @@ public class SQLiteUserRepository implements UserRepository {
     @Override
     public synchronized UserRecord insert(UserRecord user) {
         String sql = """
-                insert into users(username, password_hash, email, login_code, email_bound, email_verified, email_verify_code, question_analysis_count, login_code_issued_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into users(username, password_hash, email, login_code, email_bound, email_verified, email_verify_code, question_analysis_count, login_code_issued_at, role)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -86,6 +86,7 @@ public class SQLiteUserRepository implements UserRepository {
             statement.setString(7, user.emailVerifyCode());
             statement.setLong(8, user.questionAnalysisCount());
             statement.setLong(9, user.loginCodeIssuedAt());
+            statement.setString(10, user.effectiveRole());
             statement.executeUpdate();
             try (ResultSet keys = statement.getGeneratedKeys()) {
                 long id = keys.next() ? keys.getLong(1) : user.id();
@@ -110,8 +111,8 @@ public class SQLiteUserRepository implements UserRepository {
     @Override
     public synchronized UserRecord save(UserRecord user) {
         String sql = """
-                insert into users(id, username, password_hash, email, login_code, email_bound, email_verified, email_verify_code, question_analysis_count, login_code_issued_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into users(id, username, password_hash, email, login_code, email_bound, email_verified, email_verify_code, question_analysis_count, login_code_issued_at, role)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict(id) do update set
                   username = excluded.username,
                   password_hash = excluded.password_hash,
@@ -121,7 +122,8 @@ public class SQLiteUserRepository implements UserRepository {
                   email_verified = excluded.email_verified,
                   email_verify_code = excluded.email_verify_code,
                   question_analysis_count = excluded.question_analysis_count,
-                  login_code_issued_at = excluded.login_code_issued_at
+                  login_code_issued_at = excluded.login_code_issued_at,
+                  role = excluded.role
                 """;
         try (Connection connection = connection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -253,7 +255,8 @@ public class SQLiteUserRepository implements UserRepository {
                   email_verified integer not null default 0,
                   email_verify_code text,
                   question_analysis_count integer not null default 0,
-                  login_code_issued_at integer not null default 0
+                  login_code_issued_at integer not null default 0,
+                  role text not null default 'user'
                 )
                 """;
         try (Connection connection = connection();
@@ -262,6 +265,9 @@ public class SQLiteUserRepository implements UserRepository {
             ensureColumn(connection, "question_analysis_count", "integer not null default 0");
             // 历史数据的登录码签发时间补 0（视为不过期），不做强制登出
             ensureColumn(connection, "login_code_issued_at", "integer not null default 0");
+            // P1-1：合并账号表后，角色成为 users 表的一个字段。
+            // 历史数据全部默认为 user —— 管理员由迁移流程显式提升。
+            ensureColumn(connection, "role", "text not null default 'user'");
         } catch (SQLException exception) {
             throw new IllegalStateException("Failed to initialize user schema", exception);
         }
@@ -315,7 +321,8 @@ public class SQLiteUserRepository implements UserRepository {
                 resultSet.getBoolean("email_verified"),
                 resultSet.getString("email_verify_code"),
                 resultSet.getLong("question_analysis_count"),
-                resultSet.getLong("login_code_issued_at")
+                resultSet.getLong("login_code_issued_at"),
+                resultSet.getString("role")
         );
     }
 
@@ -330,6 +337,7 @@ public class SQLiteUserRepository implements UserRepository {
         statement.setString(8, user.emailVerifyCode());
         statement.setLong(9, user.questionAnalysisCount());
         statement.setLong(10, user.loginCodeIssuedAt());
+        statement.setString(11, user.effectiveRole());
     }
 
     /**

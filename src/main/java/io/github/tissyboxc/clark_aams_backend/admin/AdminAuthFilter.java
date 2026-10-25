@@ -1,7 +1,9 @@
 package io.github.tissyboxc.clark_aams_backend.admin;
 
 import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
+import io.github.tissyboxc.clark_aams_backend.security.CurrentUserResolver;
 import io.github.tissyboxc.clark_aams_backend.user.UserController;
+import io.github.tissyboxc.clark_aams_backend.user.UserRepository;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,9 +26,17 @@ public class AdminAuthFilter implements Filter {
     private static final String ADMIN_API_PREFIX = "/api/v1/admin/";
 
     private final AdminCredentialStore credentialStore;
+    private final CurrentUserResolver currentUserResolver;
+    private final UserRepository userRepository;
 
-    public AdminAuthFilter(AdminCredentialStore credentialStore) {
+    public AdminAuthFilter(
+            AdminCredentialStore credentialStore,
+            CurrentUserResolver currentUserResolver,
+            UserRepository userRepository
+    ) {
         this.credentialStore = credentialStore;
+        this.currentUserResolver = currentUserResolver;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -51,7 +61,9 @@ public class AdminAuthFilter implements Filter {
             return;
         }
 
-        if (isAuthenticated(httpRequest)) {
+        // P1-1：users 表里的 role 是单一事实来源。
+        // 以管理员身份登录后，普通用户会话也应被识别为有权访问后台。
+        if (isAuthenticated(httpRequest) || isAdminByRole(httpRequest)) {
             chain.doFilter(request, response);
             return;
         }
@@ -65,6 +77,15 @@ public class AdminAuthFilter implements Filter {
         }
 
         writeUnauthorizedJson(httpRequest, httpResponse, 40101, "请先登录后台管理");
+    }
+
+    /** 当前用户会话对应的账号在 users 表里是否为 admin。 */
+    private boolean isAdminByRole(HttpServletRequest request) {
+        Long userId = currentUserResolver.resolveUserId(request);
+        if (userId == null) {
+            return false;
+        }
+        return userRepository.findById(userId).map(UserRepository.UserRecord::isAdmin).orElse(false);
     }
 
     /** 是否存在有效的普通用户会话（与 `CurrentUserResolver` 的判据一致）。 */

@@ -67,8 +67,35 @@ public interface UserRepository {
             String emailVerifyCode,
             long questionAnalysisCount,
             /** 登录码签发时间戳（毫秒）。0 表示历史数据，视为永不过期。 */
-            long loginCodeIssuedAt
+            long loginCodeIssuedAt,
+            /** 身份角色（P1-1 账号表合并后由 users 表承载）。null 视为 user。 */
+            String role
     ) {
+        public UserRecord(
+                long id,
+                String username,
+                String passwordHash,
+                String email,
+                String loginCode,
+                boolean emailBound,
+                boolean emailVerified,
+                String emailVerifyCode,
+                long questionAnalysisCount,
+                long loginCodeIssuedAt
+        ) {
+            this(id, username, passwordHash, email, loginCode, emailBound,
+                    emailVerified, emailVerifyCode, questionAnalysisCount,
+                    loginCodeIssuedAt, "user");
+        }
+
+        /** 归一化后的角色，null/空白一律视为 user（失败即最小权限）。 */
+        public String effectiveRole() {
+            return role == null || role.isBlank() ? "user" : role.trim().toLowerCase();
+        }
+
+        public boolean isAdmin() {
+            return "admin".equals(effectiveRole());
+        }
         /** 兼容旧构造：默认签发时间为 0（不过期）。 */
         public UserRecord(
                 long id,

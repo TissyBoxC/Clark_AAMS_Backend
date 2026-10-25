@@ -35,6 +35,22 @@ public class AuthIdentityController {
     @GetMapping("/me")
     public ApiResponse<IdentityResponse> me(HttpServletRequest request) {
         Long userId = currentUserResolver.resolveUserId(request);
+
+        // P1-1：身份以 users 表的 role 为准（单一事实来源）。
+        // 若该用户记录的 role 是 admin，即使没有管理员会话也应判为管理员——
+        // 这正是「一套账号、按 role 分流」的意义。
+        if (userId != null) {
+            UserProfileDto user = currentUserResolver.requireUser(request);
+            if ("admin".equalsIgnoreCase(user.role())) {
+                return ApiResponse.ok(new IdentityResponse(
+                        Role.ADMIN,
+                        user.withoutLoginCode(),
+                        true,
+                        user.username()
+                ));
+            }
+        }
+
         if (isAdminSession(request)) {
             // 管理员身份优先：同一浏览器可能先登录了用户再登管理员，
             // 此时以管理员为准，否则会显示「已登录但不是管理员」的矛盾状态。
