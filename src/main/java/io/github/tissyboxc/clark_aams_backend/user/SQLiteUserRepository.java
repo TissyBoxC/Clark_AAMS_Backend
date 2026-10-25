@@ -24,6 +24,8 @@ import java.util.Optional;
 
 @Component
 public class SQLiteUserRepository implements UserRepository {
+    private static final String DATA_DIR_ENV = "CLARK_AAMS_DATA_DIR";
+
     private static final String DEFAULT_FILE_NAME = "users.db";
 
     private final String configuredPath;
@@ -328,9 +330,35 @@ public class SQLiteUserRepository implements UserRepository {
         return connection;
     }
 
+    /**
+     * 解析数据库文件位置（P5-2）。
+     *
+     * <p>优先级：
+     * <ol>
+     *   <li>配置项 {@code clark-aams.user.db-path}（显式指定，最高优先级）</li>
+     *   <li>环境变量 {@value #DATA_DIR_ENV}：数据目录，适用于容器与桌面打包分发</li>
+     *   <li>jar 同级目录（历史行为，保持向后兼容）</li>
+     *   <li>当前工作目录</li>
+     * </ol>
+     *
+     * <p>第 2 项是 P5-2 新增的。原本只有「jar 同级」一种默认行为，
+     * 这在两种常见部署下是错的：
+     * <ul>
+     *   <li>容器/只读镜像：jar 所在目录不可写，启动即失败</li>
+     *   <li>桌面安装包升级：jar 被替换，数据文件跟着丢</li>
+     * </ul>
+     * 有了数据目录变量，运维可以把数据放在任意持久化位置。
+     */
     private Path resolveDbPath() {
         if (configuredPath != null && !configuredPath.isBlank()) {
             return Path.of(configuredPath.trim()).toAbsolutePath().normalize();
+        }
+        String dataDir = System.getenv(DATA_DIR_ENV);
+        if (dataDir != null && !dataDir.isBlank()) {
+            return Path.of(dataDir.trim())
+                    .resolve(DEFAULT_FILE_NAME)
+                    .toAbsolutePath()
+                    .normalize();
         }
         Path codeSource = codeSourcePath();
         if (codeSource != null && Files.isRegularFile(codeSource)) {

@@ -288,9 +288,26 @@ public class CoursePickupStore {
         throw new IllegalStateException("Failed to allocate pickup code");
     }
 
+    /**
+     * 解析取件码存储目录（P5-2）。
+     *
+     * <p>与用户数据库保持同一套约定：优先配置项，其次数据目录环境变量
+     * {@code CLARK_AAMS_DATA_DIR}，最后回退到工作目录下的 {@code course-pickups}。
+     *
+     * <p>这样运维只需设置一个 {@code CLARK_AAMS_DATA_DIR}，
+     * 用户库与取件码数据就一起落在持久化目录里，
+     * 不会出现「数据库持久化了、取件码还在容器临时层」的半吊子状态。
+     */
     private Path resolveStorageDir() {
         if (configuredStorageDir != null && !configuredStorageDir.isBlank()) {
             return Path.of(configuredStorageDir.trim()).toAbsolutePath().normalize();
+        }
+        String dataDir = System.getenv("CLARK_AAMS_DATA_DIR");
+        if (dataDir != null && !dataDir.isBlank()) {
+            return Path.of(dataDir.trim())
+                    .resolve("course-pickups")
+                    .toAbsolutePath()
+                    .normalize();
         }
         return Path.of(System.getProperty("user.dir")).resolve("course-pickups").toAbsolutePath().normalize();
     }
