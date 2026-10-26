@@ -5,6 +5,8 @@ import io.github.tissyboxc.clark_aams_backend.common.ErrorCode;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,6 +32,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class QuotaGuard {
 
     private final Map<String, DailyCounter> dailyCounters = new ConcurrentHashMap<>();
+
+    /**
+     * 每个 key 最近一次使用的每日上限。
+     *
+     * <p>为什么要在计数里存上限：看板需要判断「这个用户是否已用满」，
+     * 而那必须用**当时真正生效的那个上限**。
+     * 若看板另读一份配置，两边一旦不一致（配置热改、测试传参不同），
+     * 结论就是错的——而且错得很隐蔽：数字看起来正常，只是标记不出来。
+     */
+    private final Map<String, Integer> appliedLimits = new ConcurrentHashMap<>();
     private final Map<String, WindowCounter> windowCounters = new ConcurrentHashMap<>();
 
     /**
@@ -44,6 +56,7 @@ public class QuotaGuard {
         if (limit <= 0) {
             return;
         }
+        appliedLimits.put(key(scope, userId), limit);
         DailyCounter counter = dailyCounters.compute(
                 key(scope, userId),
                 (ignored, existing) -> {
@@ -106,9 +119,60 @@ public class QuotaGuard {
         return counter.count().get();
     }
 
+    /**
+     * 导出今日所有用量快照，供运维看板使用。
+     *
+     * <p>为什么需要单独一个方法：内部 key 是 {@code scope + ":" + userId}
+     * 拼出来的字符串，外部拿到也无法还原成结构化的 (scope, userId)。
+     * 与其让调用方去 split 字符串，不如在这里一次性还原好——
+     * 拼 key 的规则只有这里知道，解析规则也该留在这里。
+     *
+     * <p>只返回**今天**的记录：跨天的旧计数器仍在 map 里
+     * （等下次同 key 写入时被替换），但看板不该把它们算进去。
+     *
+     * <p>注意 {@link #acquireDaily} 的行为：**超限时计数已经加过了**。
+     * 所以这里的数字是「嘗試次数」，包含被拒绝的那一次。
+     * 看板必须如实这么标注。
+     */
+    public List<UsageEntry> snapshotToday() {
+        LocalDate today = LocalDate.now();
+        List<UsageEntry> entries = new ArrayList<>();
+        dailyCounters.forEach((rawKey, counter) -> {
+            if (!counter.date().equals(today)) {
+                return;
+            }
+            int separator = rawKey.lastIndexOf(':');
+            if (separator <= 0) {
+                return;
+            }
+            String scope = rawKey.substring(0, separator);
+            long userId;
+            try {
+                userId = Long.parseLong(rawKey.substring(separator + 1));
+            } catch (NumberFormatException ignored) {
+                return;
+            }
+            int limit = appliedLimits.getOrDefault(rawKey, 0);
+            entries.add(new UsageEntry(scope, userId, counter.count().get(), limit));
+        });
+        return entries;
+    }
+
+    /**
+     * 一条用量记录。
+     *
+     * @param scope 业务域
+     * @param userId 用户 id
+     * @param count 今日计数（含被拒绝的那次）
+     * @param limit 当时生效的每日上限，&lt;=0 表示不限
+     */
+    public record UsageEntry(String scope, long userId, int count, int limit) {
+    }
+
     /** 测试与运维用：清空所有计数。 */
     public void reset() {
         dailyCounters.clear();
+        appliedLimits.clear();
         windowCounters.clear();
     }
 
