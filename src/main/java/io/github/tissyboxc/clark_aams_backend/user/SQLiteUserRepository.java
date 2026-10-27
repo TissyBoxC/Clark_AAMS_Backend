@@ -100,7 +100,11 @@ public class SQLiteUserRepository implements UserRepository {
                         user.emailVerified(),
                         user.emailVerifyCode(),
                         user.questionAnalysisCount(),
-                        user.loginCodeIssuedAt()
+                        user.loginCodeIssuedAt(),
+                        // 必须带上 role：10 参数构造器会把角色默认成 user，
+                        // 于是「库里存的是 admin，返回的对象却是 user」——
+                        // 管理员刚建好就被当成普通用户，进不去管理台。
+                        user.effectiveRole()
                 );
             }
         } catch (SQLException exception) {

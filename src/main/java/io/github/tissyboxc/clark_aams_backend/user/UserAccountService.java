@@ -32,6 +32,66 @@ public class UserAccountService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * 取得（必要时创建）某个管理员对应的普通用户记录。
+     *
+     * <p>背景：后台管理员和普通用户原本是两套互斥身份——管理员登录时会
+     * 把会话里的用户标记清掉，于是同一个浏览器进了管理台就再也用不了
+     * 课表、导入这些普通功能，直接报「登录状态无效或已过期」。
+     *
+     * <p>现在按产品要求改成「同一账号两种能力」：管理员在 users 表里
+     * 拥有一条 role='admin' 的记录，既能进管理台，也能正常使用用户工作台。
+     * 这条记录复用管理员账号名，密码哈希沿用管理员那套（PBKDF2），
+     * 不额外暴露明文。
+     *
+     * <p>幂等：已存在同名记录就直接返回，只保证 role 是 admin。
+     */
+    public synchronized UserProfileDto ensureAdminUser(String username) {
+        String normalizedName = normalize(username);
+        if (normalizedName.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "管理员账号名不能为空");
+        }
+
+        return userRepository.findByUsername(normalizedName)
+                .map(existing -> {
+                    if (existing.isAdmin()) {
+                        return toProfile(existing);
+                    }
+                    // 同名普通用户已存在：提权为管理员，保留其课表等数据
+                    return toProfile(userRepository.save(withRole(existing, "admin")));
+                })
+                .orElseGet(() -> {
+                    UserRepository.UserRecord record = new UserRepository.UserRecord(
+                            0L,
+                            normalizedName,
+                            // 管理员密码由 AdminCredentialStore 单独校验；这里存一个
+                            // 不可用于登录用户接口的占位哈希，避免密码在两处各存一份。
+                            disabledPasswordHash(),
+                            "",
+                            generateUniqueLoginCode(),
+                            false,
+                            false,
+                            "",
+                            0,
+                            System.currentTimeMillis(),
+                            "admin"
+                    );
+                    return toProfile(userRepository.insert(record));
+                });
+    }
+
+    private UserRepository.UserRecord withRole(UserRepository.UserRecord src, String role) {
+        return new UserRepository.UserRecord(
+                src.id(), src.username(), src.passwordHash(), src.email(), src.loginCode(),
+                src.emailBound(), src.emailVerified(), src.emailVerifyCode(),
+                src.questionAnalysisCount(), src.loginCodeIssuedAt(), role);
+    }
+
+    /** 不可用于登录的占位哈希：PBKDF2 结果无法与任何明文匹配。 */
+    private String disabledPasswordHash() {
+        return "!" + passwordHasher.hash(generateUniqueLoginCode());
+    }
+
     public synchronized UserProfileDto register(UserRegisterRequest request) {
         String username = normalize(request == null ? null : request.username());
         String password = normalize(request == null ? null : request.password());
