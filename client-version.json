@@ -1,0 +1,23 @@
+{
+  "latestVersion": "1.9.0",
+  "latestBuild": 25,
+  "minimumSupportedVersion": "1.7.0",
+  "minimumSupportedBuild": 20,
+  "title": "发现新版本",
+  "optionalUpdateMessage": "有新版本可用，建议更新后继续使用。",
+  "requiredUpdateMessage": "当前版本已停止支持，请更新后继续使用。",
+  "releasePageUrl": "https://github.com/TissyBoxC/Clark_AAMS/releases/latest",
+  "releaseNotes": [
+    "三端界面按粉白品牌规范重做，文案全面改写为更易懂的说法。",
+    "修好了若干提示不清楚、错误信息看不懂的问题。"
+  ],
+  "downloadSources": [
+    {
+      "type": "github",
+      "label": "GitHub 下载",
+      "url": "https://github.com/TissyBoxC/Clark_AAMS/releases/latest",
+      "primary": true,
+      "description": "直接下载安装包"
+    }
+  ]
+}
