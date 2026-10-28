@@ -304,7 +304,9 @@ class ApiContractTests {
                                 }
                                 """))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(40101));
+                // 40103 = 账号或密码不正确。和 40101「会话过期」分开，
+                // 否则前端只能对两种截然不同的处境说同一句话。
+                .andExpect(jsonPath("$.code").value(40103));
     }
 
     @Test

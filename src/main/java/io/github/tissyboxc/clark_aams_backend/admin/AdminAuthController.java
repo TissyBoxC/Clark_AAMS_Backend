@@ -62,7 +62,7 @@ public class AdminAuthController {
     ) {
         if (request == null || !credentialStore.authenticate(request.username(), request.password())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.fail(ErrorCode.LOGIN_INVALID, "账号或密码错误"));
+                    .body(ApiResponse.fail(ErrorCode.BAD_CREDENTIALS, "账号或密码错误"));
         }
 
         HttpSession session = httpRequest.getSession(true);

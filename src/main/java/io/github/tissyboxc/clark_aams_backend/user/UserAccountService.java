@@ -148,17 +148,17 @@ public class UserAccountService {
                     .filter(record -> passwordHasher.matches(password, record.passwordHash()))
                     .map(record -> upgradeLegacyHashIfNeeded(record, password))
                     .map(this::toProfile)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_INVALID, "QQ 邮箱或密码错误"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.BAD_CREDENTIALS, "QQ 邮箱或密码错误"));
         }
 
         if (username.isBlank() || password.isBlank()) {
-            throw new BusinessException(ErrorCode.LOGIN_INVALID, "请输入登录码，或输入 QQ 邮箱和密码");
+            throw new BusinessException(ErrorCode.BAD_CREDENTIALS, "请输入登录码，或输入 QQ 邮箱和密码");
         }
         return userRepository.findByUsername(username)
                 .filter(record -> passwordHasher.matches(password, record.passwordHash()))
                 .map(record -> upgradeLegacyHashIfNeeded(record, password))
                 .map(this::toProfile)
-                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_INVALID, "用户名或密码错误"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_CREDENTIALS, "用户名或密码错误"));
     }
 
     public UserProfileDto getById(long id) {

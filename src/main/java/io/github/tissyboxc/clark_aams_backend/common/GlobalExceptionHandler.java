@@ -54,6 +54,8 @@ public class GlobalExceptionHandler {
         return switch (errorCode) {
             case BAD_REQUEST -> HttpStatus.BAD_REQUEST;
             case LOGIN_INVALID -> HttpStatus.UNAUTHORIZED;
+            // 账号密码错误同样是 401，但语义是「凭据不对」而非「会话过期」
+            case BAD_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case SCHOOL_NOT_FOUND, IMPORTER_NOT_FOUND, USER_NOT_FOUND, COURSE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case USER_EMAIL_CONFLICT -> HttpStatus.CONFLICT;
