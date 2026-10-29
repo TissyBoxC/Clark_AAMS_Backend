@@ -120,7 +120,112 @@ final class JitGridTableParser {
             }
         }
 
-        return courses;
+        return mergeAdjacent(courses);
+    }
+
+    /**
+     * 把「同一门课连着上」的多条记录合成一条。
+     *
+     * <p>教务系统常把一门连堂课按两节一格拆开，比如大学物理C 在周日：
+     * 第1,2节、第3,4节、第5,6节、第7,8节，四个独立单元格。
+     * 原样传下去，课表上就是四个色块、四种颜色——可它其实是同一门课，
+     * 连着上八节。
+     *
+     * <p>合并条件全部满足才算连堂：
+     * <ul>
+     *   <li>同一天</li>
+     *   <li>课名、教师、地点相同</li>
+     *   <li>周次集合完全相同（周次不同的不是同一段课）</li>
+     *   <li>节次首尾相接或重叠：{@code 下一段的开始 <= 上一段的结束 + 1}</li>
+     * </ul>
+     *
+     * <p>1234、5678 这种也算连续——只要中间没有空档就一直往下并。
+     */
+    static List<JitJwxtParser.JitRawCourse> mergeAdjacent(List<JitJwxtParser.JitRawCourse> courses) {
+        if (courses == null || courses.size() < 2) {
+            return courses == null ? List.of() : courses;
+        }
+
+        // 先按 天 → 起始节 排序，让连堂课相邻
+        List<JitJwxtParser.JitRawCourse> sorted = new ArrayList<>(courses);
+        sorted.sort((a, b) -> {
+            int byDay = Integer.compare(a.day(), b.day());
+            if (byDay != 0) {
+                return byDay;
+            }
+            return Integer.compare(sectionOrZero(a.startSection()), sectionOrZero(b.startSection()));
+        });
+
+        List<JitJwxtParser.JitRawCourse> merged = new ArrayList<>();
+        for (JitJwxtParser.JitRawCourse course : sorted) {
+            if (merged.isEmpty()) {
+                merged.add(course);
+                continue;
+            }
+
+            JitJwxtParser.JitRawCourse last = merged.get(merged.size() - 1);
+            if (canJoin(last, course)) {
+                merged.set(merged.size() - 1, concatenate(last, course));
+            } else {
+                merged.add(course);
+            }
+        }
+
+        return merged;
+    }
+
+    /** 两条记录能不能并成一条连堂课。 */
+    private static boolean canJoin(JitJwxtParser.JitRawCourse a, JitJwxtParser.JitRawCourse b) {
+        if (a.day() != b.day()) {
+            return false;
+        }
+        if (!equalText(a.name(), b.name()) || !equalText(a.teacher(), b.teacher())
+                || !equalText(a.position(), b.position())) {
+            return false;
+        }
+        if (!a.weeks().equals(b.weeks())) {
+            return false;
+        }
+        int endOfA = a.endSection() != null ? a.endSection() : sectionOrZero(a.startSection());
+        int startOfB = sectionOrZero(b.startSection());
+        // 首尾相接（end+1 == start）或重叠（end >= start）
+        return startOfB > 0 && endOfA > 0 && startOfB <= endOfA + 1;
+    }
+
+    /** 合并两条：起止取并集，原始时间文本拼起来便于回溯。 */
+    private static JitJwxtParser.JitRawCourse concatenate(
+            JitJwxtParser.JitRawCourse a,
+            JitJwxtParser.JitRawCourse b) {
+        int start = Math.min(sectionOrZero(a.startSection()), sectionOrZero(b.startSection()));
+        int end = Math.max(
+                a.endSection() != null ? a.endSection() : sectionOrZero(a.startSection()),
+                b.endSection() != null ? b.endSection() : sectionOrZero(b.startSection()));
+
+        String rawTime = a.rawTime();
+        if (b.rawTime() != null && !b.rawTime().equals(rawTime)) {
+            rawTime = (rawTime == null || rawTime.isBlank()) ? b.rawTime() : rawTime + " / " + b.rawTime();
+        }
+
+        return new JitJwxtParser.JitRawCourse(
+                a.name(),
+                a.teacher(),
+                a.position(),
+                a.day(),
+                start > 0 ? start : null,
+                end > 0 ? end : null,
+                a.weeks(),
+                rawTime
+        );
+    }
+
+    private static boolean equalText(String a, String b) {
+        String left = a == null ? "" : a.trim();
+        String right = b == null ? "" : b.trim();
+        return left.equals(right);
+    }
+
+    private static int sectionOrZero(Integer value) {
+        return value == null ? 0 : value;
     }
 
     /**
