@@ -16,6 +16,7 @@ import io.github.tissyboxc.clark_aams_backend.pickup.CoursePickupStore;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -53,7 +54,10 @@ public class CourseImportService {
 
         SchoolAdapter adapter = resolveAdapter(request);
         if (adapter != null) {
-            ImportCourseResponse response = adapter.importHtml(request.html());
+            ImportCourseResponse response = importFromAnyCandidate(adapter, request);
+            if (response == null) {
+                throw new BusinessException(ErrorCode.COURSE_PARSE_FAILED);
+            }
             return HtmlImportResult.parsed(HtmlImportCourseResponse.parsed(
                     response.schoolId(),
                     adapter.school().name(),
@@ -76,6 +80,41 @@ public class CourseImportService {
                 SAVE_SUCCESS_MESSAGE,
                 HtmlImportCourseResponse.saved(schoolName, savedFile.fileName())
         );
+    }
+
+    /**
+     * 依次拿外层页面和各 iframe 去试解析，取第一个真能解出课程的。
+     *
+     * <p>为什么需要这个：正方等教务系统的课表页是「框架 + iframe」结构，
+     * 外层（mainbody &gt; bodydiv &gt; rightdiv &gt; iframe#iframeautoheight）
+     * 自己一张表都没有，课表全在 iframe 的 content_xs.aspx 里。
+     * 只解析外层会得到空壳，只能报「解析失败」。
+     *
+     * <p>顺序：先 iframe（通常才是正文），再外层（不含 iframe 的页面直接能用）。
+     * 每个候选都单独试，解出课程就返回，全都不行则返回 null。
+     */
+    private ImportCourseResponse importFromAnyCandidate(SchoolAdapter adapter, HtmlImportCourseRequest request) {
+        List<String> candidates = new ArrayList<>();
+        for (HtmlImportCourseRequest.FrameHtml frame : request.framesOrEmpty()) {
+            if (!isBlank(frame.html())) {
+                candidates.add(frame.html());
+            }
+        }
+        if (!isBlank(request.html())) {
+            candidates.add(request.html());
+        }
+
+        for (String candidate : candidates) {
+            try {
+                ImportCourseResponse response = adapter.importHtml(candidate);
+                if (response != null && response.courses() != null && !response.courses().isEmpty()) {
+                    return response;
+                }
+            } catch (BusinessException | IllegalStateException ignored) {
+                // 这个候选解不出来，换下一个
+            }
+        }
+        return null;
     }
 
     /**

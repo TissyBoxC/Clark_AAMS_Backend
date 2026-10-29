@@ -51,13 +51,27 @@ public class JitSchoolAdapter implements SchoolAdapter {
     public ImportCourseResponse importHtml(String html) {
         List<JitJwxtParser.JitRawCourse> rawCourses;
         try {
+            /*
+             * 两种页面形态都要认：
+             *   块格式 table#Table6 + p.kblsbk —— 早期对接的模板
+             *   格子格式 table#Table1.schedule —— 用 <br> 分行的纯文本格子
+             * 先试块格式，解不出再试格子格式。
+             */
             rawCourses = JitJwxtParser.parseIndexChartsTable(html);
+            if (rawCourses.isEmpty()) {
+                rawCourses = JitGridTableParser.parse(html);
+            }
         } catch (RuntimeException exception) {
-            throw new BusinessException(
-                    ErrorCode.COURSE_PARSE_FAILED,
-                    ErrorCode.COURSE_PARSE_FAILED.defaultMessage(),
-                    exception
-            );
+            // 块格式崩了不代表页面错，可能只是这次是格子格式
+            try {
+                rawCourses = JitGridTableParser.parse(html);
+            } catch (RuntimeException ignored) {
+                throw new BusinessException(
+                        ErrorCode.COURSE_PARSE_FAILED,
+                        ErrorCode.COURSE_PARSE_FAILED.defaultMessage(),
+                        exception
+                );
+            }
         }
 
         List<CourseDto> courses = new ArrayList<>();
