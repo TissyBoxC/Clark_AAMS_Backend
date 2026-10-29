@@ -344,7 +344,7 @@ class ApiContractTests {
 
     @Test
     void sessionCookieFilterAddsCrossSiteCookieAttributesForHttpsRequests() throws Exception {
-        SessionCookieFilter filter = new SessionCookieFilter();
+        SessionCookieFilter filter = new SessionCookieFilter(java.time.Duration.ofDays(30));
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/admin/auth/login");
         request.setServerName("api.clarkhub.cn");
         request.setServerPort(80);
@@ -360,6 +360,32 @@ class ApiContractTests {
         org.junit.jupiter.api.Assertions.assertTrue(response.getHeader("Set-Cookie").contains("SameSite=None"));
         org.junit.jupiter.api.Assertions.assertTrue(response.getHeader("Set-Cookie").contains("Secure"));
         org.junit.jupiter.api.Assertions.assertTrue(response.getHeader("Set-Cookie").contains("HttpOnly"));
+    }
+
+    @Test
+    void sessionCookieIsPersistentSoLoginSurvivesBrowserRestart() throws Exception {
+        /*
+         * 关掉浏览器就掉登录，根因是 JSESSIONID 没有 Max-Age——
+         * 那是会话 Cookie，浏览器退出就丢。这条钉住"必须有 Max-Age"，
+         * 而且值要跟会话超时一致。
+         */
+        SessionCookieFilter filter = new SessionCookieFilter(java.time.Duration.ofDays(30));
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/admin/auth/login");
+        request.setServerName("card.clarkhub.cn");
+        request.setServerPort(80);
+        request.addHeader("X-Forwarded-Proto", "https");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) ->
+                ((jakarta.servlet.http.HttpServletResponse) res)
+                        .addCookie(createSessionCookie()));
+
+        String setCookie = response.getHeader("Set-Cookie");
+        org.junit.jupiter.api.Assertions.assertNotNull(setCookie);
+        org.junit.jupiter.api.Assertions.assertTrue(
+                setCookie.contains("Max-Age=" + java.time.Duration.ofDays(30).toSeconds()),
+                "Cookie 必须带 Max-Age 才是持久 Cookie，实际：" + setCookie
+        );
     }
 
     @Test
